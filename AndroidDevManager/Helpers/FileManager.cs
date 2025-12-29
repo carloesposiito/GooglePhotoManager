@@ -2,7 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 
-namespace AndroidDevManager.Helpers
+namespace GooglePhotoTransferTool.Helpers
 {
     internal static class FileManager
     {

@@ -1,7 +1,7 @@
 ﻿using AdvancedSharpAdbClient;
 using AdvancedSharpAdbClient.Models;
 using AdvancedSharpAdbClient.Receivers;
-using AndroidDevManager.Helpers;
+using GooglePhotoTransferTool.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace AndroidDevManager.Model
+namespace GooglePhotoTransferTool.Model
 {
     internal class ConnectionManager
     {
@@ -90,7 +90,7 @@ namespace AndroidDevManager.Model
             catch (Exception exception)
             {
                 operationResult = false;
-                MessageBox.Show("Error checking program dependencies:\n" +
+                MessageBox.Show("Errore durante il controllo delle dipendenze del programma:\n" +
                     $"{exception.Message}");
             }
 
@@ -125,14 +125,14 @@ namespace AndroidDevManager.Model
                     }
                     catch (OperationCanceledException)
                     {
-                        throw new Exception("Timeout elapsed without a response!");
+                        throw new Exception("Timeout scaduto senza una risposta!");
                     }
                 }
             }
             catch (Exception exception)
             {
                 operationResult = false;
-                MessageBox.Show("Error initializing ADB server:\n" +
+                MessageBox.Show("Errore durante l'inizializzazione del server ADB:\n" +
                     $"{exception.Message}");
             }
 
@@ -158,14 +158,14 @@ namespace AndroidDevManager.Model
                     catch (OperationCanceledException)
                     {
 
-                        MessageBox.Show("Timeout elapsed without a response!");
+                        throw new Exception("Timeout scaduto senza una risposta!");
                     }
                 }
             }
             catch (Exception exception)
             {
                 operationResult.Clear();
-                MessageBox.Show("Error scanning devices:\n" +
+                MessageBox.Show("Errore durante la scansione dei dipositivi:\n" +
                     $"{exception.Message}");
             }
 
@@ -180,7 +180,7 @@ namespace AndroidDevManager.Model
                 // Check that is empty to avoid problems
                 if (Directory.GetFiles(localDestinationFolder).Count() > 0 || Directory.GetDirectories(localDestinationFolder).Count() > 0)
                 {
-                    throw new Exception("Destination folder not empty, impossible to continue! Better avoid problems...");
+                    throw new Exception("Cartella di destinazioe non vuota, impossible continuera! Meglio evitare problemi di foto mischiate!");
                 }
             }
             else
@@ -240,7 +240,7 @@ namespace AndroidDevManager.Model
             if (notFoundFiles.Count > 0)
             {
                 string missingFiles = string.Join("\n", notFoundFiles);
-                MessageBox.Show("Operation completed. Skipped following files because not found:\n" +
+                MessageBox.Show("Operazione completata. Saltati i seguenti file perchè non trovati:\n" +
                     $"{missingFiles}");
             }
 
@@ -321,9 +321,9 @@ namespace AndroidDevManager.Model
             if (!extractionCompleted)
             {
                 MessageBoxResult result = MessageBox.Show(
-                    $"Some photos were skipped while extracting from origin device ({tR.PulledCount}/{tR.ToBePulledCount})!\n" +
-                    $"Do you want to continue anyway?",
-                    "Attention",
+                    $"Alcune foto sono state saltate durante l'estrazione dal dispositivo di origine ({tR.PulledCount}/{tR.ToBePulledCount})!\n" +
+                    $"Vuoi procedere ugualmente?",
+                    "Attenzione",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question
                 );
@@ -364,8 +364,8 @@ namespace AndroidDevManager.Model
                 }
                 else
                 {
-                    MessageBox.Show($"Some photos were skipped while transferring to destination device ({tR.PushedCount}/{tR.ToBePushedCount})!\n" +
-                        $"Photos won't be deleted from origine device for security reasons");
+                    MessageBox.Show($"Alcune foto sono state saltate durante il trasferimento al dispositivo di destinazione ({tR.PushedCount}/{tR.ToBePushedCount})!\n" +
+                        $"Le foto non saranno eliminate dal dispositivo di origine per motivi di sicurezza.");
                 }
             }
 
@@ -400,7 +400,7 @@ namespace AndroidDevManager.Model
             if (notFoundFiles.Count > 0)
             {
                 string missingFiles = string.Join("\n", notFoundFiles);
-                MessageBox.Show("Operation completed. The following files were not found on the device:\n" +
+                MessageBox.Show("Operazioe completata. Le seguenti foto non sono state trovate nel dispositivo:\n" +
                     $"{missingFiles}");
             }
 
@@ -429,7 +429,7 @@ namespace AndroidDevManager.Model
                 }
                 catch (OperationCanceledException)
                 {
-                    throw new Exception("Timeout elapsed without a response!");
+                    throw new Exception("Timeout scaduto senza una risposta!");
                 }
             }
 
@@ -447,7 +447,7 @@ namespace AndroidDevManager.Model
             }
             catch (Exception exception)
             {
-                operationResult = $"Error connecting to device {deviceIp}:{devicePort}\n" +
+                operationResult = $"Errore durante la connessione al dispositivo {deviceIp}:{devicePort}\n" +
                     $"{exception.Message}";
             }
             return operationResult;
@@ -464,21 +464,21 @@ namespace AndroidDevManager.Model
             }
             catch (Exception exception)
             {
-                operationResult = $"Error pairing device {deviceIp}:{devicePort}\n" +
+                operationResult = $"Errore durante l'abbinamento del dispositivo {deviceIp}:{devicePort}\n" +
                     $"{exception.Message}";
             }
             return operationResult;
         }
 
-        internal void KillService()
+        internal async Task KillService()
         {
             try
             {
-                _adbServer.StopServer();
+                await _adbServer.StopServerAsync();
             }
             catch (Exception exception)
             {
-                MessageBox.Show("Error killing ADB server:\n" +
+                MessageBox.Show("Errore durante lo stop del server ADB:\n" +
                     $"{exception.Message}");
             }
         }

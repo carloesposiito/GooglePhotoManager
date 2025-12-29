@@ -1,4 +1,4 @@
-﻿namespace AndroidDevManager.Model
+﻿namespace GooglePhotoTransferTool.Model
 {
     internal class TransferResult
     {

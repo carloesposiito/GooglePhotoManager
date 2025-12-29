@@ -1,5 +1,6 @@
 ﻿using AdvancedSharpAdbClient.Models;
-using AndroidDevManager.Model;
+using GooglePhotoTransferTool.Model;
+using GooglePhotoTransferTool.UI;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,43 +10,25 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
-namespace AndroidDevManager
+namespace GooglePhotoTransferTool
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region "Private fields"
-        
-        private bool _isInitialized = false;
+
         private ConnectionManager _connectionManager;
+        private bool _isInitialized = false;
+        private bool _deviceConnected = false;
+        private bool _readyForTransfer = false;
         private List<DeviceData> _devices = new List<DeviceData>();
         private DeviceData _originDevice = null;
         private DeviceData _destinationDevice = null;
-        private bool _areDeviceConnected = false;
-        private bool _ready = false;
         private Visibility _progressBarVisibility = Visibility.Collapsed;
-        private Cursor _windowCursor = Cursors.Arrow;
-        private string _progressText = string.Empty;
-        private bool _wirelessConnection = false;
-        private bool _pairingNeeded = false;
 
         #endregion
 
         #region "Properties"      
-
-        public new bool Initialized
-        {
-            get
-            {
-                return _isInitialized;
-            }
-            set
-            {
-                _isInitialized = value;
-                OnPropertyChanged(nameof(Initialized));
-            }
-        }
 
         internal ConnectionManager ConnectionManager 
         { 
@@ -62,7 +45,11 @@ namespace AndroidDevManager
                 OnPropertyChanged(nameof(Devices));
 
                 // Refresh are devices connected value
-                AreDeviceConnected = value.Count > 0;
+#if DEBUG
+                DeviceConnected = value.Count > 0;
+#else
+                DeviceConnected = value.Count >= 2;
+#endif
             }
         }
 
@@ -86,32 +73,58 @@ namespace AndroidDevManager
             }
         }
 
-        public bool AreDeviceConnected
+        /// <summary>
+        /// Describes if ADB server is ready.
+        /// </summary>
+        public new bool Initialized
         {
             get
             {
-                return _areDeviceConnected;
+                return _isInitialized;
             }
             set
             {
-                _areDeviceConnected = value;
-                OnPropertyChanged(nameof(AreDeviceConnected));
+                _isInitialized = value;
+                OnPropertyChanged(nameof(Initialized));
             }
         }
 
-        public bool Ready
+        /// <summary>
+        /// Describes if at least two devices are connected.
+        /// </summary>
+        public bool DeviceConnected
         {
             get
             {
-                return _ready;
+                return _deviceConnected;
             }
             set
             {
-                _ready = value;
-                OnPropertyChanged(nameof(Ready));
+                _deviceConnected = value;
+                OnPropertyChanged(nameof(DeviceConnected));
             }
         }
 
+        /// <summary>
+        /// Describes if it's possible to start transferring.<br/>
+        /// So two different devices are choosen in related comboboxes.
+        /// </summary>
+        public bool ReadyForTransfer
+        {
+            get
+            {
+                return _readyForTransfer;
+            }
+            set
+            {
+                _readyForTransfer = value;
+                OnPropertyChanged(nameof(ReadyForTransfer));
+            }
+        }
+
+        /// <summary>
+        /// Holds progress bar visibility that describes if an operation is in progress.
+        /// </summary>
         public Visibility ProgressBarVisibility
         {
             get
@@ -122,58 +135,6 @@ namespace AndroidDevManager
             {
                 _progressBarVisibility = value;
                 OnPropertyChanged(nameof(ProgressBarVisibility));
-            }
-        }
-
-        public Cursor WindowCursor
-        {
-            get
-            {
-                return _windowCursor;
-            }
-            set
-            {
-                _windowCursor = value;
-                OnPropertyChanged(nameof(WindowCursor));
-            }
-        }
-
-        public string ProgressText
-        {
-            get
-            {
-                return _progressText;
-            }
-            set
-            {
-                _progressText = value;
-                OnPropertyChanged(nameof(ProgressText));
-            }
-        }
-
-        public bool WirelessConnection
-        {
-            get
-            {
-                return _wirelessConnection;
-            }
-            set
-            {
-                _wirelessConnection = value;
-                OnPropertyChanged(nameof(WirelessConnection));
-            }
-        }
-
-        public bool PairingNeeded
-        {
-            get
-            {
-                return _pairingNeeded;
-            }
-            set
-            {
-                _pairingNeeded = value;
-                OnPropertyChanged(nameof(PairingNeeded));
             }
         }
 
@@ -196,11 +157,15 @@ namespace AndroidDevManager
                     this.Loaded += Window_Loaded;
                 }
 
+#if DEBUG
+                MenuItem_Advanced.Visibility = Visibility.Visible;
+#endif
+
                 DataContext = this;
             }
             catch (Exception exception)
             {
-                MessageBox.Show("Error initializing program:\n" +
+                MessageBox.Show("Errore nell'inizializzazione del programma:\n" +
                     $"{exception.Message}");                
             }            
         }
@@ -213,19 +178,20 @@ namespace AndroidDevManager
         {
             try
             {
-                ProgressText = "Scanning devices...";
-                WindowCursor = Cursors.Wait;
-                ProgressBarVisibility = Visibility.Visible;
-                Ready = false;
+                ReadyForTransfer = false;
                 OriginDevice = DestinationDevice = null;
+                ProgressBarVisibility = Visibility.Visible;
                 Devices = await ConnectionManager.ScanDevicesAsync();
             }
             finally
             {
                 ProgressBarVisibility = Visibility.Collapsed;
-                WindowCursor = Cursors.Arrow;
-                ProgressText = "Ready";
             }
+        }
+
+        private void RefreshWindowHeight()
+        {
+            this.Height = (OriginDevice != null || DestinationDevice != null) ? 340 : 210;
         }
 
         #endregion
@@ -239,20 +205,14 @@ namespace AndroidDevManager
         /// </summary>
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Remove event when done
+            // Remove event
             this.Loaded -= Window_Loaded;
-
-            ProgressText = "Initializing service...";
 
             // Initialize server
             if (await ConnectionManager.InitializeServiceAsync())
             {
                 Initialized = true;
                 await ScanDevices();
-            }
-            else
-            {
-                ProgressText = "Not ready";
             }
         }
 
@@ -261,22 +221,27 @@ namespace AndroidDevManager
             await ScanDevices();
         }
 
+        private async void Btn_RestartServer_Click(object sender, RoutedEventArgs e)
+        {
+            await ConnectionManager.RestartService();
+        }
+
         private void Cb_Devices_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Ready = OriginDevice != null && DestinationDevice != null && !OriginDevice.Equals(DestinationDevice);
+            // Origin and destination device must be not null, different and authorized
+            ReadyForTransfer = OriginDevice != null && DestinationDevice != null && !OriginDevice.Equals(DestinationDevice) && !OriginDevice.State.Equals(DeviceState.Unauthorized) && !DestinationDevice.State.Equals(DeviceState.Unauthorized);
+            RefreshWindowHeight();
         }
 
         private async void Btn_TransferPhotos_Click(object sender, RoutedEventArgs e)
         {
             // Save ready status in order to restore it later (useless I know)
-            bool previousReadyState = Ready;
+            bool previousReadyState = ReadyForTransfer;
 
             try
             {
-                Ready = false;
-                WindowCursor = Cursors.Wait;
+                ReadyForTransfer = false;
                 ProgressBarVisibility = Visibility.Visible;
-                ProgressText = $"Transferring photos from {OriginDevice.Model} to {DestinationDevice.Model} in progress...";
 
                 // Check if delete photos from source is checked in order to pass it to function
                 bool deletePhotosFromOriginDevice = (bool)Cb_DeleteFromOrigin.IsChecked;
@@ -287,54 +252,45 @@ namespace AndroidDevManager
                 {
                     if (tR.AllFilesSynced)
                     {
-                        ProgressText = $"Operation completed ({tR.PushedCount})";
+                        // Show message
+                        string message = $"Operazione completata: trasferite {tR.PushedCount} foto";
+                        message += deletePhotosFromOriginDevice ? (tR.DeleteCompleted ? " e poi cancellate dal dispositivo di origine." : " ma alcune potrebbero non essere state cancellate dal dispositivo di origine.") : ".";
+                        MessageBox.Show(message);
 
-                        if (deletePhotosFromOriginDevice)
+                        if (Directory.Exists(tR.FolderPath))
                         {
-                            if (tR.DeleteCompleted)
+                            // Ask to delete photos from local PC only if all transferred successfully
+                            bool deleteLocalFolder = MessageBox.Show(
+                                $"Vuoi cancellare da questo computer le foto appena trasferite?",
+                                "Attenzione",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Question
+                            ).Equals(MessageBoxResult.Yes);
+
+                            if (deleteLocalFolder)
                             {
-                                ProgressText += "and photos deleted from origin";
-
-                                if (Directory.Exists(tR.FolderPath))
-                                {
-                                    // Ask to delete photos from local PC only if all transferred successfully
-                                    bool deleteLocalFolder = MessageBox.Show(
-                                        $"Do you want to delete transferred photos from this computer?",
-                                        "Attention",
-                                        MessageBoxButton.YesNo,
-                                        MessageBoxImage.Question
-                                    ).Equals(MessageBoxResult.Yes);
-
-                                    if (deleteLocalFolder)
-                                    {
-                                        Directory.Delete(tR.FolderPath, true);
-                                    }
-                                    else
-                                    {
-                                        // Open in explorer
-                                        Process.Start(new ProcessStartInfo
-                                        {
-                                            FileName = "explorer.exe",
-                                            Arguments = $"\"{tR.FolderPath}\"",
-                                            UseShellExecute = true
-                                        });
-                                    }
-                                }                                
+                                Directory.Delete(tR.FolderPath, true);
                             }
                             else
                             {
-                                MessageBox.Show($"Check photos on {OriginDevice.Model}: some files not deleted after transferring completed.");
+                                // Open in explorer
+                                Process.Start(new ProcessStartInfo
+                                {
+                                    FileName = "explorer.exe",
+                                    Arguments = $"\"{tR.FolderPath}\"",
+                                    UseShellExecute = true
+                                });
                             }
                         }
                     }
                     else
                     {
-                        string message = $"Extracted {tR.PulledCount}/{tR.ToBePulledCount} from {OriginDevice.Model}\n" +
-                            $"Transferred {tR.PushedCount}/{tR.ToBePushedCount} to {DestinationDevice.Model}\n";
+                        string message = $"Estratte {tR.PulledCount}/{tR.ToBePulledCount} foto da {OriginDevice.Model}.\n" +
+                            $"Trasferite {tR.PushedCount}/{tR.ToBePushedCount} foto a {DestinationDevice.Model}.\n";
 
                         if (deletePhotosFromOriginDevice)
                         {
-                            message += $"Photos not deleted from origin device for security reasons.";
+                            message += $"Le foto non sono state cancellate dal dispositivo di origine per motivi di sicurezza.";
                         }
 
                         // Show messages
@@ -344,14 +300,12 @@ namespace AndroidDevManager
             }
             catch (Exception exception)
             {
-                ProgressText = string.Empty;
-                MessageBox.Show($"Error transferring photos from {OriginDevice.Model} to {DestinationDevice.Model}:\n" +
+                MessageBox.Show($"Errore durante il trasferimento delle foto da {OriginDevice.Model} a {DestinationDevice.Model}:\n" +
                     $"{exception.Message}");
             }
             finally
             {
-                Ready = previousReadyState;
-                WindowCursor = Cursors.Arrow;
+                ReadyForTransfer = previousReadyState;
                 ProgressBarVisibility = Visibility.Collapsed;
             }            
         }
@@ -362,42 +316,31 @@ namespace AndroidDevManager
             {
                 // Kill server and restart in order to show auth popup on connected devices
                 MessageBoxResult result = MessageBox.Show(
-                        $"ADB server will be restarted: an authorization popup should be appear on your device then please give authorization.\n" +
-                        $"Click YES button to continue.",
+                        $"Il server ADB verrà riavviato ed un popup di autorizzazione per fornire i permessi necessari dovrebbe apparire sul tuo dispositivo.",
                         "Attention",
-                        MessageBoxButton.YesNo,
+                        MessageBoxButton.OK,
                         MessageBoxImage.Information
                     );
 
                 if (result.Equals(MessageBoxResult.Yes))
                 {
-                    ProgressText = "Authorization in progress...";
-
                     if (!await ConnectionManager.RestartService())
                     {
-                        MessageBox.Show("Error restarting ADB server: check server status.");
+                        MessageBox.Show("Errore nel riavvio del server ADB!");
                     }
                 }
             }
             catch (Exception exception)
             {
-                MessageBox.Show($"Error restarting ADB server:\n" +
+                MessageBox.Show($"Errore nel riavvio del server ADB:\n" +
                     $"{exception.Message}");
             }
-            finally
-            {
-                ProgressText = string.Empty;
-            }
         }
 
-        private void Btn_Close_Click(object sender, RoutedEventArgs e)
+        private async void Btn_Close_Click(object sender, RoutedEventArgs e)
         {
+            await ConnectionManager.KillService();
             Close();
-        }
-
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            ConnectionManager.KillService();
         }
 
         private async void Btn_ConnectWirelessDevice_Click(object sender, RoutedEventArgs e)
@@ -406,61 +349,117 @@ namespace AndroidDevManager
 
             try
             {
-                ProgressBarVisibility = Visibility.Visible;
+                InputDialog iD;
+                bool pairingNeeded = false;
+                string deviceIpAddress = string.Empty;
+                string devicePort = string.Empty;
+                string devicePairingCode = string.Empty;
 
-                string deviceIp = Tb_DeviceIp.Text;
-                string devicePort = Tb_DevicePort.Text;
-                string devicePairingCode = Tb_DevicePairingCode.Text;
+                this.Hide();
 
-                // Check data
-                if (string.IsNullOrWhiteSpace(deviceIp))
+                // Ask for pairing
+                MessageBoxResult pairingQuestion = MessageBox.Show(
+                        $"Se il tuo dispositivo non è mai stato connesso a questo PC tramite ADB Wireless, occorre innanzitutto che venga associato.\n" +
+                        $"E' la prima volta che lo smartphone viene connesso al PC?",
+                        "Attenzione",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+
+                pairingNeeded = pairingQuestion.Equals(MessageBoxResult.Yes);
+
+                // Show info about where to find device IP and port for Wireless ADB connection
+                if (pairingNeeded)
                 {
-                    MessageBox.Show("Device IP address not valid!");
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(devicePort))
-                {
-                    MessageBox.Show("Device port not valid!");
-                    return;
-                }
-
-                if (PairingNeeded)
-                {
-                    if (string.IsNullOrWhiteSpace(devicePairingCode))
-                    {
-                        MessageBox.Show("Paring code cannot be empty!");
-                        return;
-                    }
-                    else
-                    {
-                        operationResult = await ConnectionManager.PairWirelessAsync(deviceIp, devicePort, devicePairingCode);
-                    }
+                    MessageBox.Show($"Recati nella sezione \"ADB Wireless\" delle \"Impostazioni sviluppatore\" dello smartphone e premi la voce \"Abbina dispositivo tramite codice di accoppiamento\".\n" +
+                        $"Si aprirà una finestra con i dati necessari alla connessione da inserire nelle schermate che seguono.",
+                        "Attenzione",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                 }
                 else
                 {
-                    operationResult = await ConnectionManager.ConnectWirelessAsync(deviceIp, devicePort);
+                    MessageBox.Show($"Recati nella sezione \"ADB Wireless\" delle \"Impostazioni sviluppatore\" dello smartphone.\n" +
+                        $"Si aprirà una finestra con i dati necessari alla connessione da inserire nelle schermate che seguono.",
+                        "Attenzione",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+
+                // Ask for device IP address
+                iD = new InputDialog
+                {
+                    DialogTitle = "ADB Wireless",
+                    DialogMessage = "Inserissci l'indirizzo IP del dispositivo:"
+                };
+
+                if ((bool)iD.ShowDialog() && !string.IsNullOrWhiteSpace(iD.DialogValue))
+                {
+                    deviceIpAddress = iD.DialogValue;
+                }
+                else
+                {
+                    return;
+                }
+
+                // Ask for device port   
+                iD = new InputDialog
+                {
+                    DialogTitle = "ADB Wireless",
+                    DialogMessage = "Inserisci la porta del dispositivo:"
+                };
+
+                if ((bool)iD.ShowDialog() && !string.IsNullOrWhiteSpace(iD.DialogValue))
+                {
+                    devicePort = iD.DialogValue;
+                }
+                else
+                {
+                    return;
+                }
+
+                // Check if pairing is needed
+                if (pairingNeeded)
+                {
+                    // Ask for device pairing code
+                    iD = new InputDialog
+                    {
+                        DialogTitle = "ADB Wireless",
+                        DialogMessage = "Inserisci il codice di associazione:"
+                    };
+
+                    if ((bool)iD.ShowDialog() && !string.IsNullOrWhiteSpace(iD.DialogValue))
+                    {
+                        devicePairingCode = iD.DialogValue;
+                    }
+                    else
+                    {
+                        return;
+                    }
+
+                    // Pair
+                    operationResult = await ConnectionManager.PairWirelessAsync(deviceIpAddress, devicePort, devicePairingCode);
+                }
+                else
+                {
+                    // Connect
+                    operationResult = await ConnectionManager.ConnectWirelessAsync(deviceIpAddress, devicePort);
                 }
             }
             catch (Exception exception)
             {
-                operationResult = "Error while connecting device via Wireless ADB:\n" +
+                operationResult = "Errore durante la connessione ADB:\n" +
                     $"{exception.Message}";
             }
             finally
             {
-                WirelessConnection = false;
-                PairingNeeded = false;
-                Tb_DeviceIp.Text = Tb_DevicePort.Text = Tb_DevicePairingCode.Text = string.Empty;
+                if (!string.IsNullOrWhiteSpace(operationResult))
+                {
+                    MessageBox.Show(operationResult, "Attenzione", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await ScanDevices();
+                }
 
-                ProgressBarVisibility = Visibility.Collapsed;
-                MessageBox.Show(operationResult);
+                this.Show();
             }
-        }
-
-        private void Lbl_TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            DragMove();
         }
 
         #endregion
