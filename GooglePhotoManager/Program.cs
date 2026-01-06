@@ -1,6 +1,9 @@
-﻿using GooglePhotoManager.Model;
+﻿using AdvancedSharpAdbClient.Models;
+using GooglePhotoManager.Model;
 using System.Net;
 using System.Reflection;
+using System.Xml.Schema;
+using static System.Net.Mime.MediaTypeNames;
 
 class Program
 {
@@ -32,7 +35,8 @@ class Program
         // At this point is possible to set an active user before going on
         await UsersWizard();
 
-        // At this point select origin device
+        // At this point start transfer wizard
+        await TransferWizard();
 
         // Just to be sure, if arrived here kill ADB server
         await Exit();
@@ -231,29 +235,118 @@ class Program
 
     private async static Task TransferWizard()
     {
-        do
+        try
         {
-            // Label to try again just in case unlimited backup device is not found anymore
-            TryAgain:
-
-            if (_adbManager.UnlimitedDevice != null)
+            // If no origin devices exists loop till at least one is detected
+            while (_adbManager.OriginDevices.Count.Equals(0))
             {
-                // Check if devices different from unlimited backup one are set
-                if (_adbManager.OriginDevices.Count > 0)
-                {
+                Console.WriteLine($"Non è stato trovato un dispositivo da cui estrarre le foto da sottoporre a backup.");
+                Console.WriteLine($"(1) Cerca ancora");
+                Console.WriteLine($"(2) Connetti via ADB Wireless");
+                Console.WriteLine($"(3) Associa via ADB Wireless (se mai connesso precedentemente)");
+                Console.WriteLine();
+                Console.Write($"Inserisci la scelta desiderata oppure (0) per chiudere il programma: ");
 
+                // Switch according to user choice
+                switch (Console.ReadLine())
+                {
+                    case "0":
+                        await Exit();
+                        break;
+
+                    case "1":
+                        await _adbManager.ScanDevicesAsync();
+                        break;
+
+                    case "2":
+                        await WirelessAdbWizard(pairingNeeded: false);
+                        await _adbManager.ScanDevicesAsync();
+                        break;
+
+                    case "3":
+                        await WirelessAdbWizard(pairingNeeded: true);
+                        await _adbManager.ScanDevicesAsync();
+                        break;
+
+                    default:
+                        Console.WriteLine("La scelta effettuata non è valida.");
+                        break;
                 }
-                else
-                {
-                    while (_adbManager.OriginDevices.Count.Equals(0))
-                    {
-                        Console.WriteLine($"(1) Cerca ancora");
-                        Console.WriteLine($"(2) Connetti via ADB Wireless");
-                        Console.WriteLine($"(3) Associa via ADB Wireless (se mai connesso precedentemente)");
-                        Console.WriteLine();
-                        Console.Write($"Inserisci la scelta desiderata oppure (0) per chiudere il programma: ");
+                Console.WriteLine();
+            }
 
-                        // Switch according to user choice
+            // Origin devices found
+            if (_adbManager.OriginDevices.Count > 0)
+            {
+                // Select a device to get images from
+                DeviceData originDevice = null;
+
+                // Only if not in debug mode
+#if !DEBUG
+            // There's only a device so select it as origin device
+            if (_adbManager.OriginDevices.Count.Equals(1))
+            {
+                originDevice = _adbManager.OriginDevices.First();
+            }
+#endif
+
+                // If more than one device, loop till one is selected
+                while (originDevice == null)
+                {
+                    Console.WriteLine($"Seleziona un dispositivo da cui estrarre le foto:");
+
+                    int devicesCount = _adbManager.OriginDevices.Count;
+                    int deviceCounter;
+                    for (deviceCounter = 0; deviceCounter < devicesCount; deviceCounter++)
+                    {
+                        DeviceData dD = _adbManager.OriginDevices.ElementAt(deviceCounter);
+                        Console.WriteLine($"({deviceCounter + 1}) - {dD.Model} ({dD.Product}){(string.IsNullOrWhiteSpace(dD.Name) ? "" : $" - \"{dD.Name}\"")}");
+                    }
+
+                    Console.WriteLine();
+                    Console.Write($"Seleziona un dispositivo oppure (0) per chiudere il programma: ");
+
+                    // Switch according to user choice
+                    string deviceChoiceStr = Console.ReadLine();
+                    if (int.TryParse(deviceChoiceStr, out int deviceChoice))
+                    {
+                        if (deviceChoice.Equals(0))
+                        {
+                            await Exit();
+                        }
+                        else
+                        {
+                            if (deviceChoice >= 1 && deviceChoice <= devicesCount)
+                            {
+                                originDevice = _adbManager.OriginDevices.ElementAt(deviceChoice - 1);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Scelta non valida");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Scelta non valida");
+                    }
+                    Console.WriteLine();
+                }
+
+                if (originDevice != null)
+                {
+                    bool validChoice = false;
+
+                    do
+                    {
+                        // Print selected device info
+                        Console.WriteLine($"Il dispositivo selezionato da sottoporre a backup è il seguente:");
+                        Console.WriteLine($"({originDevice.Model} ({originDevice.Product}){(string.IsNullOrWhiteSpace(originDevice.Name) ? "" : $" - \"{originDevice.Name}\"")}");
+                        Console.WriteLine("E' tutto pronto per procedere al backup delle foto.");
+                        Console.WriteLine();
+                        Console.Write($"Inserisci (1) per continuare oppure (0) per chiudere il programma: ");
+
+                        // Start transfer
                         switch (Console.ReadLine())
                         {
                             case "0":
@@ -261,39 +354,34 @@ class Program
                                 break;
 
                             case "1":
-                                await _adbManager.ScanDevicesAsync();
-                                break;
-
-                            case "2":
-                                await WirelessAdbWizard(pairingNeeded: false);
-                                break;
-
-                            case "3":
-                                await WirelessAdbWizard(pairingNeeded: true);
+                                //await _adbManager.ScanDevicesAsync();
+                                validChoice = true;
                                 break;
 
                             default:
                                 Console.WriteLine("La scelta effettuata non è valida.");
                                 break;
                         }
+                        Console.WriteLine();
                     }
-                    
-
-
-
-
-
-                   
+                    while (!validChoice);
                 }
-                Console.WriteLine();
+                else
+                {
+                    throw new Exception("Il dispositivo selezionato è cambiato o non più disponibile");
+                }
             }
             else
             {
-                Console.WriteLine($"\"{AdbManager.UNLIMITED_BK_DEVICE_NAME}\" non è stato trovato o non è più connesso.");
-                await UnlimitedDeviceWizard();
+                throw new Exception("I dispositivi di origine connessi sono cambiato o non più disponibili");
             }
         }
-        while (_adbManager.UnlimitedDevice == null);
+        catch (Exception exception)
+        {
+            Console.WriteLine("Errore generico nella ricerca dei dispositivi da sottoporre a backup.\n" +
+                                "Il programma verrà chiuso per evitare situazioni impreviste.");
+            await Exit();
+        }        
     }
 
 
@@ -316,6 +404,6 @@ class Program
         Environment.Exit(0);
     }
 
-    #endregion
+#endregion
 
 }

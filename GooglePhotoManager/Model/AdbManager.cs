@@ -523,6 +523,7 @@ namespace GooglePhotoManager.Model
                                 Console.WriteLine("Impostazione utente in corso...");
                             }
 
+                            _currentUser = currentUser;
                             operationResult = true;
                         }
                         catch (OperationCanceledException)
@@ -541,6 +542,305 @@ namespace GooglePhotoManager.Model
 
             return operationResult;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        private async Task<int> PullFilesAsync(DeviceData targetDevice, List<string> fileNamesToBePulled, string localDestinationFolder, string targetDeviceFolder = "DCIM/Camera")
+        {
+            // Create destination folder if doesn't exist
+            if (Directory.Exists(localDestinationFolder))
+            {
+                // Check that is empty to avoid problems
+                if (Directory.GetFiles(localDestinationFolder).Count() > 0 || Directory.GetDirectories(localDestinationFolder).Count() > 0)
+                {
+                    throw new Exception("Cartella di destinazione non vuota, meglio evitare problemi di foto mischiate");
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory(localDestinationFolder);
+            }
+
+            // Create sync object
+            var sync = new SyncService(AdbClient.Instance.EndPoint, targetDevice);
+
+            // Pull photos
+            int pulledPhotosCount = 0;
+            foreach (var photo in fileNamesToBePulled)
+            {
+                string remotePath = $"/sdcard/{targetDeviceFolder}/{photo}";
+                string localPath = Path.Combine(localDestinationFolder, photo);
+
+                using (FileStream file = File.OpenWrite(localPath))
+                {
+                    await sync.PullAsync(remotePath, file, null, CancellationToken.None);
+                }
+
+                pulledPhotosCount++;
+            }
+
+            return pulledPhotosCount;
+        }
+
+        private async Task<int> PushFilesAsync(DeviceData targetDevice, List<string> filenamesToBePushed, string targetDeviceFolder = "DCIM/Camera")
+        {
+            // Create sync object
+            var sync = new SyncService(AdbClient.Instance.EndPoint, targetDevice);
+
+            // Push files
+            int pushedFilesCount = 0;
+            List<string> notFoundFiles = new List<string>();
+            foreach (var localFilename in filenamesToBePushed)
+            {
+                // If file doesn't exist locally save it's name
+                if (!File.Exists(localFilename))
+                {
+                    notFoundFiles.Add(localFilename);
+                }
+
+                string fileName = Path.GetFileName(localFilename);
+                string remotePath = $"/sdcard/{targetDeviceFolder}/{fileName}";
+
+                using (FileStream fileStream = File.OpenRead(localFilename))
+                {
+                    await sync.PushAsync(fileStream, remotePath, UnixFileStatus.AllPermissions, DateTime.Now);
+                }
+
+                pushedFilesCount++;
+            }
+
+            // Check missing files if existing
+            if (notFoundFiles.Count > 0)
+            {
+                string missingFiles = string.Join("\n", notFoundFiles);
+                MessageBox.Show("Operazione completata. Saltati i seguenti file perchè non trovati:\n" +
+                    $"{missingFiles}");
+            }
+
+            return pushedFilesCount;
+        }
+
+        private async Task<List<string>> GetFolderFilesAsync(DeviceData targetDevice, string deviceFolder = "DCIM/Camera")
+        {
+            // Remove slash at the start and end of the device path
+            deviceFolder = deviceFolder.Trim('/');
+
+            // Create output receiver to read list from console output
+            var receiver = new ConsoleOutputReceiver();
+
+            // Execute command
+            await AdbClient.Instance.ExecuteRemoteCommandAsync($"ls -1 /sdcard/{deviceFolder}", targetDevice, receiver);
+
+            // Return list of files from folder
+            return receiver.ToString()
+                .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(f => f.Trim())
+                .Where(f => !f.EndsWith("/"))       // Needed to exclude subdirectories
+                .ToList();
+        }
+
+        internal async Task<TransferResult> TransferPhotos(DeviceData originDevice, DeviceData destinationDevice, bool deleteFromOriginDevice)
+        {
+            TransferResult tR = new TransferResult();
+
+            bool extractionCompleted = false;
+            bool pushCompleted = false;
+
+            // Get files to be pulled from origin device
+            List<string> originDevicePhotos = await GetFolderFilesAsync(originDevice);
+
+            // Get files exsiting in destination device folder
+            // In this way is possible to extract only useful photos
+            List<string> destinationDevicePhotos = await GetFolderFilesAsync(destinationDevice);
+
+            // Create a list with only useful photos
+            // Then fill it
+            List<string> photosFilenames = new List<string>();
+            foreach (string originDevicePhoto in originDevicePhotos)
+            {
+                // Start with false flag
+                bool shouldBeCopied = true;
+
+                // Check if destination device has already current photo
+                foreach (string destinationDevicePhoto in destinationDevicePhotos)
+                {
+                    if (originDevicePhoto.Equals(destinationDevicePhoto))
+                    {
+                        // Photo is already existing
+                        shouldBeCopied = false;
+                        break;
+                    }
+                }
+
+                if (shouldBeCopied)
+                {
+                    // Add to list of file to be copied
+                    photosFilenames.Add(originDevicePhoto);
+                }
+            }
+
+            // Refresh variable of photos to be pulled
+            tR.ToBePulledCount = photosFilenames.Count;
+
+            // Create local temp folders
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string localDir = Path.Combine(Directory.GetCurrentDirectory(), "GooglePhotoTransfer", $"{originDevice.Model.ToUpper()}_to_{destinationDevice.Model.ToUpper()}_{timestamp}");
+            tR.FolderPath = localDir;
+            Directory.CreateDirectory(localDir);
+
+            // Extract files to local folder
+            tR.PulledCount = await PullFilesAsync(originDevice, photosFilenames, localDir);
+            extractionCompleted = tR.PulledCount.Equals(tR.ToBePulledCount);
+            if (!extractionCompleted)
+            {
+                MessageBoxResult result = MessageBox.Show(
+                    $"Alcune foto sono state saltate durante l'estrazione dal dispositivo di origine ({tR.PulledCount}/{tR.ToBePulledCount})!\n" +
+                    $"Vuoi procedere ugualmente?",
+                    "Attenzione",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question
+                );
+
+                extractionCompleted = result.Equals(MessageBoxResult.Yes);
+            }
+
+            // Push files into destination device if ok
+            if (extractionCompleted)
+            {
+                // Get file filenames from previous extraction directory
+                List<string> filenamesToBePushed = Directory.GetFiles(localDir).ToList();
+                tR.ToBePushedCount = filenamesToBePushed.Count;
+                if (tR.ToBePushedCount.Equals(0))
+                {
+                    throw new Exception("No photos to push in destination device!");
+                }
+
+                tR.PushedCount = await PushFilesAsync(destinationDevice, filenamesToBePushed);
+                pushCompleted = tR.PushedCount.Equals(tR.ToBePushedCount);
+                //if (!pushCompleted)
+                //{
+                //    MessageBox.Show($"Some photos were skipped while transferring to destination device ({tR.PushedCount}/{tR.ToBePushedCount})!\n" +
+                //        $"Photos won't be deleted from origine device for security reasons");
+                //}
+            }
+
+            tR.AllFilesSynced = extractionCompleted.Equals(pushCompleted);
+
+            // If all done successfully
+            if (deleteFromOriginDevice)
+            {
+                if (tR.AllFilesSynced)
+                {
+                    // Delete from origin device
+                    int deletedCount = await DeleteFilesAsync(originDevice, photosFilenames);
+                    tR.DeleteCompleted = deletedCount.Equals(tR.PulledCount) && deletedCount.Equals(tR.PushedCount);
+                }
+                else
+                {
+                    MessageBox.Show($"Alcune foto sono state saltate durante il trasferimento al dispositivo di destinazione ({tR.PushedCount}/{tR.ToBePushedCount})!\n" +
+                        $"Le foto non saranno eliminate dal dispositivo di origine per motivi di sicurezza.");
+                }
+            }
+
+            return tR;
+        }
+
+        private async Task<int> DeleteFilesAsync(DeviceData targetDevice, List<string> filenamesToBeDeleted, string targetDeviceFolder = "DCIM/Camera")
+        {
+            int deletedFilesCount = 0;
+            List<string> notFoundFiles = new List<string>();
+
+            foreach (var filename in filenamesToBeDeleted)
+            {
+                string fileName = Path.GetFileName(filename);
+                string remotePath = $"/sdcard/{targetDeviceFolder}/{fileName}";
+
+                var receiver = new ConsoleOutputReceiver();
+
+                await AdbClient.Instance.ExecuteRemoteCommandAsync($"rm -f \"{remotePath}\"", targetDevice, receiver);
+
+                // If there's output probably it is an error (file not existing?)
+                if (!string.IsNullOrWhiteSpace(receiver.ToString()))
+                {
+                    notFoundFiles.Add(fileName);
+                }
+                else
+                {
+                    deletedFilesCount++;
+                }
+            }
+
+            if (notFoundFiles.Count > 0)
+            {
+                string missingFiles = string.Join("\n", notFoundFiles);
+                MessageBox.Show("Operazioe completata. Le seguenti foto non sono state trovate nel dispositivo:\n" +
+                    $"{missingFiles}");
+            }
+
+            return deletedFilesCount;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         #endregion
     }
