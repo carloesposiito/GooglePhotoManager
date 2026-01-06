@@ -10,7 +10,8 @@ class Program
     /// ADB manager object.
     /// </summary>
     private static AdbManager _adbManager = new AdbManager();
-    private static UsersManager _userManager = new UsersManager();    
+
+    private static MyUser _activeUser;
 
     #endregion
 
@@ -26,9 +27,12 @@ class Program
         }
                 
         // Keep flow block untill unlimited device is connected
-        await WaitForUnlimitedDevice();
+        await UnlimitedDeviceWizard();
 
-        // At this point is possible to get active user
+        // At this point is possible to set an active user before going on
+        await UsersWizard();
+
+        // At this point select origin device
 
         // Just to be sure, if arrived here kill ADB server
         await Exit();
@@ -39,7 +43,7 @@ class Program
     /// <summary>
     /// Loops untill unlimited device is connected.
     /// </summary>
-    private async static Task WaitForUnlimitedDevice()
+    private async static Task UnlimitedDeviceWizard()
     {
         do
         {
@@ -148,16 +152,117 @@ class Program
     }
 
     /// <summary>
+    /// Starts wizard to select current user starting from found backup device user spaces.<br/>
+    /// Exits when a user is selected and related device user space is opened on backup device.
+    /// </summary>
+    private static async Task UsersWizard()
+    {
+        do
+        {
+            Console.WriteLine($"Ricerca degli spazio utente sul dispositivo...");
+
+            // Get users from unlimited backup device
+            await _adbManager.GetUsersAsync();
+            
+            if (_adbManager.Users.Count > 0)
+            {
+                int usersCount = _adbManager.Users.Count;
+                int userCounter;
+                for (userCounter = 0; userCounter < usersCount; userCounter++)
+                {
+                    MyUser user = _adbManager.Users.Values.ElementAt(userCounter);
+                    Console.WriteLine($"({userCounter + 1}) - {user.Name}");
+                }
+
+                Console.WriteLine();
+                Console.Write($"Seleziona un utente oppure (0) per chiudere il programma: ");
+
+                // Switch according to user choice
+                string userChoiceStr = Console.ReadLine();
+                if (int.TryParse(userChoiceStr, out int userChoice))
+                {
+                    if (userChoice.Equals(0))
+                    {
+                        await Exit();
+                    }
+                    else
+                    {
+                        if (userChoice >= 1 && userChoice <= usersCount)
+                        {
+                            MyUser selectedUser = _adbManager.Users.ElementAt(userChoice - 1).Value;
+                            if (await _adbManager.SetUserAsync(selectedUser))
+                            {
+                                Console.WriteLine($"\"{selectedUser.Name}\" impostato come utente attivo");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Non è stato possibile impostare l'utente selezionato");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Scelta non valida");
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Scelta non valida");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Nessuno spazio utente trovato sul dispositivo di backup");
+                Console.WriteLine();
+                break;
+            }
+
+            Console.WriteLine();
+        }
+        while (_adbManager.CurrentUser == null);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private static async Task TransferWizard()
+    {
+
+    // Label to try again just in case unlimited backup device is not found anymore
+    TryAgain:
+
+        if (_adbManager.UnlimitedDevice != null)
+        {
+            if (_adbManager.OriginDevices.Count > 0)
+            {
+
+            }
+            else
+            {
+                Console.WriteLine("Non è stato trovato nessun dispositivo da cui prelevare le foto.");
+            }
+            Console.WriteLine();
+        }
+        else
+        {
+            Console.WriteLine("Il dispositivo non è stato trovato.");
+            await UnlimitedDeviceWizard();
+            goto TryAgain;
+        }
+    }
+
+    /// <summary>
     /// Exits program killing ADB server.
     /// </summary>
     private static async Task Exit()
     {
-        Console.WriteLine("Killing ADB service and exiting program...");
-        await _adbManager.KillServiceAsync();
+        Console.WriteLine("Chiusura del servizio ADB ed uscita dal programma in corso...");
 #if DEBUG
         // Just wait user input before close
-        Console.ReadLine();
+        Console.WriteLine("Premi un tasto per chiudere");
+        Console.ReadKey();
 #endif
+        await _adbManager.KillServiceAsync();
         Environment.Exit(0);
     }
 

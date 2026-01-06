@@ -1,5 +1,6 @@
 ﻿using AdvancedSharpAdbClient;
 using AdvancedSharpAdbClient.Models;
+using AdvancedSharpAdbClient.Receivers;
 using GooglePhotoManager.Utils;
 using System.IO.Compression;
 
@@ -15,6 +16,7 @@ namespace GooglePhotoManager.Model
         internal const string UNLIMITED_BK_DEVICE_NAME = "Pixel 5 (redfin)";
         internal const string UNLIMITED_BK_DEVICE_MODEL = "Pixel_5";
         internal const string UNLIMITED_BK_DEVICE_PRODUCT = "redfin";
+        internal const int USERSPACE_CHANGE_TIME = 6000;
 
         #endregion
 
@@ -26,14 +28,20 @@ namespace GooglePhotoManager.Model
         private AdbServer _adbServer;
         private AdbClient _adbClient;
         private List<DeviceData> _devices = new List<DeviceData>();
+        private List<DeviceData> _originDevices = new List<DeviceData>();
         private DeviceData _unlimitedDevice;
+        private Dictionary<string, MyUser> _users = new();
+        private MyUser _currentUser = null;
 
         #endregion
 
         #region "Properties"
 
         public List<DeviceData> Devices { get => _devices; set => _devices = value; }
+        public List<DeviceData> OriginDevices { get => _originDevices; set => _originDevices = value; }
         public DeviceData UnlimitedDevice { get => _unlimitedDevice; set => _unlimitedDevice = value; }
+        internal Dictionary<string, MyUser> Users { get => _users; set => _users = value; }
+        internal MyUser CurrentUser { get => _currentUser; set => _currentUser = value; }
 
         #endregion
 
@@ -237,11 +245,21 @@ namespace GooglePhotoManager.Model
                     {
                         foreach (DeviceData device in await _adbClient.GetDevicesAsync())
                         {
-                            if (device.Model.Equals(UNLIMITED_BK_DEVICE_MODEL) && device.Product.Equals(UNLIMITED_BK_DEVICE_PRODUCT))
+                            if (device.State.Equals(DeviceState.Online))
                             {
-                                _unlimitedDevice = device;
+                                if (device.Model.Equals(UNLIMITED_BK_DEVICE_MODEL) && device.Product.Equals(UNLIMITED_BK_DEVICE_PRODUCT))
+                                {
+                                    _unlimitedDevice = device;
+                                }
+                                else
+                                {
+                                    // Add to origin devices list
+                                    _originDevices.Add(device);
+                                }
+
+                                // Add to all devices list
+                                _devices.Add(device);
                             }
-                            _devices.Add(device);
                         }
                     }
                     catch (OperationCanceledException)
@@ -311,6 +329,217 @@ namespace GooglePhotoManager.Model
             {
                 Utilities.DisplayException(GetType().ToString(), "KillServiceAsync", exception.Message);
             }
+        }
+
+        /// <summary>
+        /// Returns unlimited backup device users.<br/>
+        /// If passed bool is true, sets current user automatically according to the active user space on device.<br/>
+        /// Handles exception writing message to console and returning an empty list.
+        /// </summary>
+        internal async Task GetUsersAsync()
+        {
+            _users.Clear();
+            _currentUser = null;
+
+            try
+            {
+                if (_unlimitedDevice != null)
+                {
+                    using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(15)))
+                    {
+                        try
+                        {
+                            var receiver = new ConsoleOutputReceiver();
+
+                            await _adbClient.ExecuteRemoteCommandAsync(
+                                "pm list users",
+                                _unlimitedDevice,
+                                receiver,
+                                cts.Token
+                            );
+
+                            var output = receiver.ToString();
+
+                            #region "Parse output into users"
+
+                            foreach (string outputLine in output.Split('\n'))
+                            {
+                                string line = outputLine.Trim();
+                                if (line.StartsWith("UserInfo{"))
+                                {
+                                    int openBrace = line.IndexOf('{');
+                                    int firstColon = line.IndexOf(':', openBrace + 1);
+                                    int secondColon = line.IndexOf(':', firstColon + 1);
+
+                                    if (openBrace < 0 || firstColon < 0 || secondColon < 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    // Extract user id
+                                    string id = line.Substring(openBrace + 1, firstColon - openBrace - 1);
+
+                                    // Extract user name
+                                    string name = line.Substring(firstColon + 1, secondColon - firstColon - 1);
+
+                                    // Create user starting from device user space name
+                                    if (!string.IsNullOrWhiteSpace(name) && !_users.ContainsKey(name))
+                                    {
+                                        MyUser myUser = new(name, id);
+                                        _users.Add(name, myUser);
+                                    }
+                                }
+                            }
+
+                            #endregion
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw new Exception("Timeout scaduto");
+                        }
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                _users.Clear();
+                _currentUser = null;
+                Utilities.DisplayException(GetType().ToString(), "GetUsersAsync", exception.Message);
+            }
+        }
+
+        /// <summary>
+        /// Returns current user active on unlimited backup device.<br/>
+        /// Handles exceptions showing message and returning a null object.
+        /// </summary>
+        internal async Task<MyUser> GetCurrentUserAsync()
+        {
+            MyUser currentUser = null;
+
+            try
+            {
+                if (_unlimitedDevice != null)
+                {
+                    using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(15)))
+                    {
+                        try
+                        {
+                            var receiver = new ConsoleOutputReceiver();
+
+                            await _adbClient.ExecuteRemoteCommandAsync(
+                                "dumpsys activity activities",
+                                _unlimitedDevice,
+                                receiver,
+                                cts.Token
+                            );
+
+                            var output = receiver.ToString();
+
+                            #region "Check current active user space"
+
+                            foreach (string outputLine in output.Split('\n'))
+                            {
+                                string line = outputLine.Trim();
+
+                                if (line.StartsWith("mCurrentUser="))
+                                {
+                                    int openBrace = line.IndexOf('{');
+                                    int firstColon = line.IndexOf(':', openBrace + 1);
+                                    int secondColon = line.IndexOf(':', firstColon + 1);
+
+                                    if (openBrace < 0 || firstColon < 0 || secondColon < 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    // Extract user id and name, then create object to be returned
+                                    string id = line.Substring(openBrace + 1, firstColon - openBrace - 1);
+                                    string name = line.Substring(firstColon + 1, secondColon - firstColon - 1);
+                                    currentUser = new(id, name);
+                                    break;
+                                }
+                            }
+
+                            #endregion
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw new Exception("Timeout scaduto");
+                        }
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                currentUser = null;
+                Utilities.DisplayException(GetType().ToString(), "GetCurrentUsersAsync", exception.Message);
+            }
+
+            return currentUser;
+        }
+
+        /// <summary>
+        /// Sets current user chaning user space on backup device.<br/>
+        /// Returns true if set successfully, otherwise false.<br/>
+        /// Handles exception writing message to console and setting current user to null.
+        /// </summary>
+        internal async Task<bool> SetUserAsync(MyUser currentUser)
+        {
+            bool operationResult = false;
+
+            try
+            {
+                if (currentUser != null)
+                {
+                    using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(15)))
+                    {
+                        try
+                        {
+                            var receiver = new ConsoleOutputReceiver();
+
+                            // Change user space on unlimited backup device according to passed user ID
+                            await _adbClient.ExecuteRemoteCommandAsync(
+                                $"am switch-user {currentUser.Id}",
+                                _unlimitedDevice,
+                                receiver,
+                                cts.Token
+                            );
+
+                            // Write command output if not empty
+                            string outputResult = receiver.ToString();
+                            if (!string.IsNullOrWhiteSpace(outputResult))
+                            {
+                                Console.Write(outputResult);
+                            }
+
+                            await Task.Delay(USERSPACE_CHANGE_TIME);
+
+                            // Check active user space on device and also check if its name is equals to passed user one
+                            MyUser fromDevice = await GetCurrentUserAsync();
+                            while (_currentUser != fromDevice)
+                            {
+                                await Task.Delay(250);
+                                fromDevice = await GetCurrentUserAsync();
+                                Console.WriteLine("Impostazione utente in corso...");
+                            }
+
+                            operationResult = true;
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw new Exception("Timeout scaduto");
+                        }
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                operationResult = false;
+                _currentUser = null;
+                Utilities.DisplayException(GetType().ToString(), "SetUserAsync", exception.Message);
+            }
+
+            return operationResult;
         }
 
         #endregion

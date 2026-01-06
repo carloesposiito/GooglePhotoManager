@@ -16,7 +16,7 @@ namespace GooglePhotoManager.Model
         #region "Private fields"
 
         private string _name = string.Empty;
-        private int _lastThreeDigits = 000;
+        private string _id = string.Empty;
         private string _basePath = string.Empty;
 
         #endregion
@@ -24,18 +24,18 @@ namespace GooglePhotoManager.Model
         #region "Properties"
 
         public string Name { get => _name; }
-        public int LastThreeDigits { get => _lastThreeDigits; }
+        public string Id { get => _id; }
         public string BasePath { get => _basePath; }
 
         #endregion
 
         #region "Constructor"
 
-        internal MyUser(string name, int lastThreeDigits)
+        internal MyUser(string name, string id)
         {
             _name = name.ToUpper();
-            _lastThreeDigits = lastThreeDigits;
-            _basePath =  $"{Directory.GetCurrentDirectory()}\\{USERS_FOLDER_NAME}\\{_name.ToUpper()}_{_lastThreeDigits}";
+            _id = id.ToUpper();
+            _basePath =  $"{Directory.GetCurrentDirectory()}\\{USERS_FOLDER_NAME}\\{_name.ToUpper()}";
 
             // Create user directory if not existing
             if (!Directory.Exists(_basePath))
