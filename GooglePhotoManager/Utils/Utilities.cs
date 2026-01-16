@@ -10,7 +10,7 @@
         /// </summary>
         internal static void DisplayException(string className, string functionName, string exceptionMessage)
         {
-            if (!string.IsNullOrWhiteSpace(className) && string.IsNullOrWhiteSpace(functionName) && string.IsNullOrWhiteSpace(exceptionMessage))
+            if (!string.IsNullOrWhiteSpace(className) && !string.IsNullOrWhiteSpace(functionName) && !string.IsNullOrWhiteSpace(exceptionMessage))
             {
                 Console.WriteLine(
                     $"***************\n" +

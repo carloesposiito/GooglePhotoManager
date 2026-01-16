@@ -609,10 +609,14 @@ namespace GooglePhotoManager.Model
 
             // Pull photos
             int pulledPhotosCount = 0;
+            var progressBar = new ConsoleProgressBar(fileNamesToBePulled.Count, "Download");
+
             foreach (var photo in fileNamesToBePulled)
             {
                 string remotePath = $"/sdcard/{targetDeviceFolder}/{photo}";
                 string localPath = Path.Combine(localDestinationFolder, photo);
+
+                progressBar.Update(photo);
 
                 using (FileStream file = File.OpenWrite(localPath))
                 {
@@ -622,6 +626,7 @@ namespace GooglePhotoManager.Model
                 pulledPhotosCount++;
             }
 
+            progressBar.Complete();
             return pulledPhotosCount;
         }
 
@@ -633,15 +638,20 @@ namespace GooglePhotoManager.Model
             // Push files
             int pushedFilesCount = 0;
             List<string> notFoundFiles = new List<string>();
+            var progressBar = new ConsoleProgressBar(filenamesToBePushed.Count, "Upload");
+
             foreach (var localFilename in filenamesToBePushed)
             {
+                string fileName = Path.GetFileName(localFilename);
+                progressBar.Update(fileName);
+
                 // If file doesn't exist locally save it's name
                 if (!File.Exists(localFilename))
                 {
                     notFoundFiles.Add(localFilename);
+                    continue;
                 }
 
-                string fileName = Path.GetFileName(localFilename);
                 string remotePath = $"/sdcard/{targetDeviceFolder}/{fileName}";
 
                 using (FileStream fileStream = File.OpenRead(localFilename))
@@ -652,11 +662,13 @@ namespace GooglePhotoManager.Model
                 pushedFilesCount++;
             }
 
+            progressBar.Complete();
+
             // Check missing files if existing
             if (notFoundFiles.Count > 0)
             {
                 string missingFiles = string.Join("\n", notFoundFiles);
-                MessageBox.Show("Operazione completata. Saltati i seguenti file perchè non trovati:\n" +
+                Console.WriteLine("Operazione completata. Saltati i seguenti file perchè non trovati:\n" +
                     $"{missingFiles}");
             }
 
@@ -736,15 +748,10 @@ namespace GooglePhotoManager.Model
             extractionCompleted = tR.PulledCount.Equals(tR.ToBePulledCount);
             if (!extractionCompleted)
             {
-                MessageBoxResult result = MessageBox.Show(
-                    $"Alcune foto sono state saltate durante l'estrazione dal dispositivo di origine ({tR.PulledCount}/{tR.ToBePulledCount})!\n" +
-                    $"Vuoi procedere ugualmente?",
-                    "Attenzione",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question
-                );
-
-                extractionCompleted = result.Equals(MessageBoxResult.Yes);
+                Console.WriteLine($"Alcune foto sono state saltate durante l'estrazione dal dispositivo di origine ({tR.PulledCount}/{tR.ToBePulledCount})!");
+                Console.Write("Vuoi procedere ugualmente? (S/N): ");
+                string? response = Console.ReadLine();
+                extractionCompleted = response?.Trim().ToUpper() == "S";
             }
 
             // Push files into destination device if ok
@@ -780,8 +787,8 @@ namespace GooglePhotoManager.Model
                 }
                 else
                 {
-                    MessageBox.Show($"Alcune foto sono state saltate durante il trasferimento al dispositivo di destinazione ({tR.PushedCount}/{tR.ToBePushedCount})!\n" +
-                        $"Le foto non saranno eliminate dal dispositivo di origine per motivi di sicurezza.");
+                    Console.WriteLine($"Alcune foto sono state saltate durante il trasferimento al dispositivo di destinazione ({tR.PushedCount}/{tR.ToBePushedCount})!");
+                    Console.WriteLine("Le foto non saranno eliminate dal dispositivo di origine per motivi di sicurezza.");
                 }
             }
 
@@ -792,10 +799,13 @@ namespace GooglePhotoManager.Model
         {
             int deletedFilesCount = 0;
             List<string> notFoundFiles = new List<string>();
+            var progressBar = new ConsoleProgressBar(filenamesToBeDeleted.Count, "Eliminazione");
 
             foreach (var filename in filenamesToBeDeleted)
             {
                 string fileName = Path.GetFileName(filename);
+                progressBar.Update(fileName);
+
                 string remotePath = $"/sdcard/{targetDeviceFolder}/{fileName}";
 
                 var receiver = new ConsoleOutputReceiver();
@@ -813,10 +823,12 @@ namespace GooglePhotoManager.Model
                 }
             }
 
+            progressBar.Complete();
+
             if (notFoundFiles.Count > 0)
             {
                 string missingFiles = string.Join("\n", notFoundFiles);
-                MessageBox.Show("Operazioe completata. Le seguenti foto non sono state trovate nel dispositivo:\n" +
+                Console.WriteLine("Operazione completata. Le seguenti foto non sono state trovate nel dispositivo:\n" +
                     $"{missingFiles}");
             }
 

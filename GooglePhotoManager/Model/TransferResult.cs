@@ -1,4 +1,4 @@
-﻿namespace GooglePhotoTransferTool.Model
+﻿namespace GooglePhotoManager.Model
 {
     internal class TransferResult
     {

@@ -1,9 +1,8 @@
 ﻿using AdvancedSharpAdbClient.Models;
 using GooglePhotoManager.Model;
+using GooglePhotoManager.Utils;
 using System.Net;
 using System.Reflection;
-using System.Xml.Schema;
-using static System.Net.Mime.MediaTypeNames;
 
 class Program
 {
@@ -18,17 +17,25 @@ class Program
 
     #endregion
 
+    private static string AppVersion => Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
+
     static async Task Main()
     {
-        Console.WriteLine($"GooglePhotoManager v{Assembly.GetExecutingAssembly().GetName().Version}");
-        Console.WriteLine();
+        ConsoleUI.ShowBanner(AppVersion);
 
+        ConsoleUI.StartSpinner("Inizializzazione ADB in corso...");
         bool initializeResult = await _adbManager.Initialize();
+        ConsoleUI.StopSpinner();
+
         if (!initializeResult)
         {
+            ConsoleUI.ShowError("Inizializzazione ADB fallita.");
             return;
         }
-                
+
+        ConsoleUI.ShowSuccess("ADB inizializzato correttamente.");
+        Console.WriteLine();
+
         // Keep flow block untill unlimited device is connected
         await UnlimitedDeviceWizard();
 
@@ -49,29 +56,35 @@ class Program
     /// </summary>
     private async static Task UnlimitedDeviceWizard()
     {
+        ConsoleUI.ShowSectionTitle("Ricerca Dispositivo di Backup");
+
         do
         {
-            Console.WriteLine($"Ricerca del dispositivo di backup in corso...");
+            ConsoleUI.StartSpinner("Ricerca del dispositivo di backup in corso...");
 
             // Scan devices to find unlimited device
             await _adbManager.ScanDevicesAsync();
 
+            ConsoleUI.StopSpinner();
+
             // Check that unlimited backup device is connected
             if (_adbManager.UnlimitedDevice != null)
             {
-                Console.WriteLine($"{AdbManager.UNLIMITED_BK_DEVICE_NAME} connesso.");
+                ConsoleUI.ShowSuccess($"{AdbManager.UNLIMITED_BK_DEVICE_NAME} connesso.");
             }
             else
             {
-                Console.WriteLine($"\"{AdbManager.UNLIMITED_BK_DEVICE_NAME}\" non trovato.");
-                Console.WriteLine($"(1) Cerca ancora");
-                Console.WriteLine($"(2) Connetti via ADB Wireless");
-                Console.WriteLine($"(3) Associa via ADB Wireless (se mai connesso precedentemente)");
-                Console.WriteLine();
-                Console.Write($"Inserisci la scelta desiderata oppure (0) per chiudere il programma: ");
+                ConsoleUI.ShowWarning($"\"{AdbManager.UNLIMITED_BK_DEVICE_NAME}\" non trovato.");
+
+                ConsoleUI.ShowMenu(
+                    ("1", "Cerca ancora"),
+                    ("2", "Connetti via ADB Wireless"),
+                    ("3", "Associa via ADB Wireless (se mai connesso)"),
+                    ("0", "Chiudi il programma")
+                );
 
                 // Switch according to user choice
-                switch (Console.ReadLine())
+                switch (ConsoleUI.Prompt("Inserisci la scelta: "))
                 {
                     case "0":
                         await Exit();
@@ -86,10 +99,10 @@ class Program
 
                     case "3":
                         await WirelessAdbWizard(pairingNeeded: true);
-                        break;                   
+                        break;
 
                     default:
-                        Console.WriteLine("La scelta effettuata non è valida.");
+                        ConsoleUI.ShowError("La scelta effettuata non è valida.");
                         break;
                 }
             }
@@ -107,51 +120,53 @@ class Program
     {
         string operationResult = string.Empty;
 
-        Console.WriteLine("Attenzione: per utilizzare ADB Wireless è necessario che l'opzione \"Wireless ADB\" sia attiva nelle impostazioni sviluppatore del dispositivo.\n" +
-            "Dalla schermata ADB Wireless è possibile ottenere tutti i dati necessari per la connessione Wireless.");
         Console.WriteLine();
-        
+        ConsoleUI.ShowInfo("Per utilizzare ADB Wireless è necessario che l'opzione \"Wireless ADB\"");
+        ConsoleUI.ShowInfo("sia attiva nelle impostazioni sviluppatore del dispositivo.");
+        Console.WriteLine();
+
         // Request IP address and check its validity
-        Console.Write("Inserisci l'indirizzo IP del dispositivo: ");
-        string deviceIpAddress = Console.ReadLine();
+        string? deviceIpAddress = ConsoleUI.Prompt("Indirizzo IP del dispositivo: ");
         if (string.IsNullOrWhiteSpace(deviceIpAddress) || !IPAddress.TryParse(deviceIpAddress, out _))
         {
-            Console.WriteLine("L'indirizzo IP del dispositivo non sembra essere valido");
+            ConsoleUI.ShowError("L'indirizzo IP del dispositivo non sembra essere valido.");
             return;
         }
 
         // Request port and check its validity
-        Console.Write("Inserisci la porta del dispositivo: ");
-        string devicePort = Console.ReadLine();
+        string? devicePort = ConsoleUI.Prompt("Porta del dispositivo: ");
         if (string.IsNullOrWhiteSpace(devicePort))
         {
-            Console.WriteLine("La porta del dispositivo non può essere vuota");
+            ConsoleUI.ShowError("La porta del dispositivo non può essere vuota.");
             return;
         }
 
         if (pairingNeeded)
         {
             // Request pairing code and check its validity
-            Console.Write("Inserisci il codice di associazione del dispositivo: ");
-            string devicePairingCode = Console.ReadLine();
+            string? devicePairingCode = ConsoleUI.Prompt("Codice di associazione: ");
             if (string.IsNullOrWhiteSpace(devicePairingCode))
             {
-                Console.WriteLine("Il codice di associazione del dispositivo non può essere vuoto");
+                ConsoleUI.ShowError("Il codice di associazione del dispositivo non può essere vuoto.");
                 return;
             }
 
             // Pair
+            ConsoleUI.StartSpinner("Associazione in corso...");
             operationResult = await _adbManager.PairWirelessAsync(deviceIpAddress, devicePort, devicePairingCode);
+            ConsoleUI.StopSpinner();
         }
         else
-        { 
+        {
             // Connect
+            ConsoleUI.StartSpinner("Connessione in corso...");
             operationResult = await _adbManager.ConnectWirelessAsync(deviceIpAddress, devicePort);
+            ConsoleUI.StopSpinner();
         }
 
         if (!string.IsNullOrWhiteSpace(operationResult))
         {
-            Console.WriteLine(operationResult);
+            ConsoleUI.ShowInfo(operationResult);
         }
     }
 
@@ -161,28 +176,34 @@ class Program
     /// </summary>
     private static async Task UsersWizard()
     {
+        ConsoleUI.ShowSectionTitle("Selezione Utente");
+
         do
         {
-            Console.WriteLine($"Ricerca degli spazio utente sul dispositivo...");
+            ConsoleUI.StartSpinner("Ricerca degli spazi utente sul dispositivo...");
 
             // Get users from unlimited backup device
             await _adbManager.GetUsersAsync();
-            
+
+            ConsoleUI.StopSpinner();
+
             if (_adbManager.Users.Count > 0)
             {
+                ConsoleUI.ShowSuccess($"Trovati {_adbManager.Users.Count} spazi utente.");
+                Console.WriteLine();
+
                 int usersCount = _adbManager.Users.Count;
-                int userCounter;
-                for (userCounter = 0; userCounter < usersCount; userCounter++)
+                for (int userCounter = 0; userCounter < usersCount; userCounter++)
                 {
                     MyUser user = _adbManager.Users.Values.ElementAt(userCounter);
-                    Console.WriteLine($"({userCounter + 1}) - {user.Name}");
+                    ConsoleUI.ShowUserCard(userCounter + 1, user.Name);
                 }
 
                 Console.WriteLine();
-                Console.Write($"Seleziona un utente oppure (0) per chiudere il programma: ");
+                ConsoleUI.ShowMenu(("0", "Chiudi il programma"));
 
                 // Switch according to user choice
-                string userChoiceStr = Console.ReadLine();
+                string? userChoiceStr = ConsoleUI.Prompt("Seleziona un utente: ");
                 if (int.TryParse(userChoiceStr, out int userChoice))
                 {
                     if (userChoice.Equals(0))
@@ -194,29 +215,34 @@ class Program
                         if (userChoice >= 1 && userChoice <= usersCount)
                         {
                             MyUser selectedUser = _adbManager.Users.ElementAt(userChoice - 1).Value;
-                            if (await _adbManager.SetUserAsync(selectedUser))
+
+                            ConsoleUI.StartSpinner($"Impostazione utente \"{selectedUser.Name}\"...");
+                            bool setResult = await _adbManager.SetUserAsync(selectedUser);
+                            ConsoleUI.StopSpinner();
+
+                            if (setResult)
                             {
-                                Console.WriteLine($"\"{selectedUser.Name}\" impostato come utente attivo");
+                                ConsoleUI.ShowSuccess($"\"{selectedUser.Name}\" impostato come utente attivo.");
                             }
                             else
                             {
-                                Console.WriteLine("Non è stato possibile impostare l'utente selezionato");
+                                ConsoleUI.ShowError("Non è stato possibile impostare l'utente selezionato.");
                             }
                         }
                         else
                         {
-                            Console.WriteLine("Scelta non valida");
+                            ConsoleUI.ShowError("Scelta non valida.");
                         }
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Scelta non valida");
+                    ConsoleUI.ShowError("Scelta non valida.");
                 }
             }
             else
             {
-                Console.WriteLine("Nessuno spazio utente trovato sul dispositivo di backup");
+                ConsoleUI.ShowWarning("Nessuno spazio utente trovato sul dispositivo di backup.");
                 Console.WriteLine();
                 break;
             }
@@ -226,50 +252,53 @@ class Program
         while (_adbManager.CurrentUser == null);
     }
 
-  
-
-
-
-
-
-
     private async static Task TransferWizard()
     {
+        ConsoleUI.ShowSectionTitle("Trasferimento Foto");
+
         try
         {
             // If no origin devices exists loop till at least one is detected
             while (_adbManager.OriginDevices.Count.Equals(0))
             {
-                Console.WriteLine($"Non è stato trovato un dispositivo da cui estrarre le foto da sottoporre a backup.");
-                Console.WriteLine($"(1) Cerca ancora");
-                Console.WriteLine($"(2) Connetti via ADB Wireless");
-                Console.WriteLine($"(3) Associa via ADB Wireless (se mai connesso precedentemente)");
-                Console.WriteLine();
-                Console.Write($"Inserisci la scelta desiderata oppure (0) per chiudere il programma: ");
+                ConsoleUI.ShowWarning("Non è stato trovato un dispositivo da cui estrarre le foto.");
+
+                ConsoleUI.ShowMenu(
+                    ("1", "Cerca ancora"),
+                    ("2", "Connetti via ADB Wireless"),
+                    ("3", "Associa via ADB Wireless (se mai connesso)"),
+                    ("0", "Chiudi il programma")
+                );
 
                 // Switch according to user choice
-                switch (Console.ReadLine())
+                switch (ConsoleUI.Prompt("Inserisci la scelta: "))
                 {
                     case "0":
                         await Exit();
                         break;
 
                     case "1":
+                        ConsoleUI.StartSpinner("Ricerca dispositivi...");
                         await _adbManager.ScanDevicesAsync();
+                        ConsoleUI.StopSpinner();
                         break;
 
                     case "2":
                         await WirelessAdbWizard(pairingNeeded: false);
+                        ConsoleUI.StartSpinner("Ricerca dispositivi...");
                         await _adbManager.ScanDevicesAsync();
+                        ConsoleUI.StopSpinner();
                         break;
 
                     case "3":
                         await WirelessAdbWizard(pairingNeeded: true);
+                        ConsoleUI.StartSpinner("Ricerca dispositivi...");
                         await _adbManager.ScanDevicesAsync();
+                        ConsoleUI.StopSpinner();
                         break;
 
                     default:
-                        Console.WriteLine("La scelta effettuata non è valida.");
+                        ConsoleUI.ShowError("La scelta effettuata non è valida.");
                         break;
                 }
                 Console.WriteLine();
@@ -279,35 +308,40 @@ class Program
             if (_adbManager.OriginDevices.Count > 0)
             {
                 // Select a device to get images from
-                DeviceData originDevice = null;
+                DeviceData? originDevice = null;
 
                 // Only if not in debug mode
 #if !DEBUG
-            // There's only a device so select it as origin device
-            if (_adbManager.OriginDevices.Count.Equals(1))
-            {
-                originDevice = _adbManager.OriginDevices.First();
-            }
+                // There's only a device so select it as origin device
+                if (_adbManager.OriginDevices.Count.Equals(1))
+                {
+                    originDevice = _adbManager.OriginDevices.First();
+                }
 #endif
 
                 // If more than one device, loop till one is selected
                 while (originDevice == null)
                 {
-                    Console.WriteLine($"Seleziona un dispositivo da cui estrarre le foto:");
+                    ConsoleUI.ShowInfo("Seleziona un dispositivo da cui estrarre le foto:");
+                    Console.WriteLine();
 
                     int devicesCount = _adbManager.OriginDevices.Count;
-                    int deviceCounter;
-                    for (deviceCounter = 0; deviceCounter < devicesCount; deviceCounter++)
+                    for (int deviceCounter = 0; deviceCounter < devicesCount; deviceCounter++)
                     {
                         DeviceData dD = _adbManager.OriginDevices.ElementAt(deviceCounter);
-                        Console.WriteLine($"({deviceCounter + 1}) - {dD.Model} ({dD.Product}){(string.IsNullOrWhiteSpace(dD.Name) ? "" : $" - \"{dD.Name}\"")}");
+                        ConsoleUI.ShowDeviceCard(
+                            deviceCounter + 1,
+                            dD.Model,
+                            dD.Product,
+                            string.IsNullOrWhiteSpace(dD.Name) ? null : dD.Name
+                        );
                     }
 
                     Console.WriteLine();
-                    Console.Write($"Seleziona un dispositivo oppure (0) per chiudere il programma: ");
+                    ConsoleUI.ShowMenu(("0", "Chiudi il programma"));
 
                     // Switch according to user choice
-                    string deviceChoiceStr = Console.ReadLine();
+                    string? deviceChoiceStr = ConsoleUI.Prompt("Seleziona un dispositivo: ");
                     if (int.TryParse(deviceChoiceStr, out int deviceChoice))
                     {
                         if (deviceChoice.Equals(0))
@@ -322,13 +356,13 @@ class Program
                             }
                             else
                             {
-                                Console.WriteLine("Scelta non valida");
+                                ConsoleUI.ShowError("Scelta non valida.");
                             }
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Scelta non valida");
+                        ConsoleUI.ShowError("Scelta non valida.");
                     }
                     Console.WriteLine();
                 }
@@ -340,26 +374,74 @@ class Program
                     do
                     {
                         // Print selected device info
-                        Console.WriteLine($"Il dispositivo selezionato da sottoporre a backup è il seguente:");
-                        Console.WriteLine($"({originDevice.Model} ({originDevice.Product}){(string.IsNullOrWhiteSpace(originDevice.Name) ? "" : $" - \"{originDevice.Name}\"")}");
-                        Console.WriteLine("E' tutto pronto per procedere al backup delle foto.");
+                        ConsoleUI.ShowInfo("Dispositivo selezionato per il backup:");
                         Console.WriteLine();
-                        Console.Write($"Inserisci (1) per continuare oppure (0) per chiudere il programma: ");
+                        ConsoleUI.ShowDeviceCard(
+                            1,
+                            originDevice.Model,
+                            originDevice.Product,
+                            string.IsNullOrWhiteSpace(originDevice.Name) ? null : originDevice.Name
+                        );
+
+                        ConsoleUI.ShowSuccess("Tutto pronto per procedere al backup delle foto.");
+
+                        ConsoleUI.ShowMenu(
+                            ("1", "Avvia backup"),
+                            ("0", "Chiudi il programma")
+                        );
 
                         // Start transfer
-                        switch (Console.ReadLine())
+                        switch (ConsoleUI.Prompt("Inserisci la scelta: "))
                         {
                             case "0":
                                 await Exit();
                                 break;
 
                             case "1":
-                                //await _adbManager.ScanDevicesAsync();
                                 validChoice = true;
+
+                                // Chiedi se eliminare le foto dal dispositivo di origine
+                                Console.WriteLine();
+                                string? deleteResponse = ConsoleUI.Prompt("Eliminare le foto dal dispositivo di origine dopo il backup? (S/N): ");
+                                bool deleteFromOrigin = deleteResponse?.Trim().ToUpper() == "S";
+
+                                // Esegui il trasferimento
+                                Console.WriteLine();
+                                ConsoleUI.StartSpinner("Trasferimento in corso...");
+                                var result = await _adbManager.TransferPhotos(originDevice, _adbManager.UnlimitedDevice, deleteFromOrigin);
+                                ConsoleUI.StopSpinner();
+
+                                // Mostra il risultato con summary box
+                                var summaryItems = new List<(string, string)>
+                                {
+                                    ("Foto da estrarre", result.ToBePulledCount.ToString()),
+                                    ("Foto estratte", result.PulledCount.ToString()),
+                                    ("Foto da trasferire", result.ToBePushedCount.ToString()),
+                                    ("Foto trasferite", result.PushedCount.ToString()),
+                                    ("Sincronizzazione", result.AllFilesSynced ? "Completata" : "Fallita")
+                                };
+
+                                if (deleteFromOrigin)
+                                {
+                                    summaryItems.Add(("Eliminazione", result.DeleteCompleted ? "Completata" : "Fallita"));
+                                }
+
+                                summaryItems.Add(("Cartella locale", result.FolderPath ?? "N/A"));
+
+                                ConsoleUI.ShowSummaryBox("Riepilogo Trasferimento", summaryItems.ToArray());
+
+                                if (result.AllFilesSynced)
+                                {
+                                    ConsoleUI.ShowSuccess("Backup completato con successo!");
+                                }
+                                else
+                                {
+                                    ConsoleUI.ShowWarning("Backup completato con alcuni errori.");
+                                }
                                 break;
 
                             default:
-                                Console.WriteLine("La scelta effettuata non è valida.");
+                                ConsoleUI.ShowError("La scelta effettuata non è valida.");
                                 break;
                         }
                         Console.WriteLine();
@@ -376,31 +458,30 @@ class Program
                 throw new Exception("I dispositivi di origine connessi sono cambiato o non più disponibili");
             }
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            Console.WriteLine("Errore generico nella ricerca dei dispositivi da sottoporre a backup.\n" +
-                                "Il programma verrà chiuso per evitare situazioni impreviste.");
+            Console.WriteLine();
+            ConsoleUI.ShowError("Errore nella ricerca dei dispositivi da sottoporre a backup.");
+            ConsoleUI.ShowError("Il programma verrà chiuso per evitare situazioni impreviste.");
             await Exit();
-        }        
+        }
     }
-
-
-
-
-
 
     /// <summary>
     /// Exits program killing ADB server.
     /// </summary>
     private static async Task Exit()
     {
-        Console.WriteLine("Chiusura del servizio ADB ed uscita dal programma in corso...");
+        Console.WriteLine();
+        ConsoleUI.StartSpinner("Chiusura del servizio ADB in corso...");
+        await _adbManager.KillServiceAsync();
+        ConsoleUI.StopSpinner();
+        ConsoleUI.ShowInfo("Arrivederci!");
 #if DEBUG
         // Just wait user input before close
-        Console.WriteLine("Premi un tasto per chiudere");
-        Console.ReadKey();
+        Console.WriteLine();
+        ConsoleUI.Prompt("Premi INVIO per chiudere...");
 #endif
-        await _adbManager.KillServiceAsync();
         Environment.Exit(0);
     }
 
