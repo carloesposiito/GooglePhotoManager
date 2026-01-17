@@ -484,6 +484,22 @@ class Program
             return;
         }
 
+        // Scansiona gli utenti sul dispositivo di backup
+        Console.WriteLine();
+        ConsoleUI.StartSpinner(L.ScanningUsers);
+        await _adbManager.GetUsersAsync();
+        ConsoleUI.StopSpinner();
+
+        if (_adbManager.Users.Count == 0)
+        {
+            ConsoleUI.ShowWarning(L.NoUsersFound);
+            return;
+        }
+
+        // Seleziona utente sul dispositivo di backup
+        var selectedUser = await SelectUserAsync();
+        if (selectedUser == null) return;
+
         // Seleziona dispositivo origine se ce ne sono piu' di uno
         DeviceData? originDevice;
         if (_adbManager.OriginDevices.Count == 1)
@@ -528,11 +544,105 @@ class Program
         if (result.AllFilesSynced)
         {
             ConsoleUI.ShowSuccess(L.BackupCompletedSuccess);
+
+            // Se tutti i file sono stati trasferiti con successo, chiedi se cancellare la cartella locale
+            if (!string.IsNullOrEmpty(result.FolderPath) && Directory.Exists(result.FolderPath))
+            {
+                Console.WriteLine();
+                string? deleteLocalResponse = ConsoleUI.Prompt(L.DeleteLocalPhotosAfterTransfer);
+                bool deleteLocalFiles = deleteLocalResponse?.Trim().ToUpper() == "S" ||
+                                        deleteLocalResponse?.Trim().ToUpper() == "Y";
+
+                if (deleteLocalFiles)
+                {
+                    try
+                    {
+                        ConsoleUI.StartSpinner(L.DeletingLocalFiles);
+                        Directory.Delete(result.FolderPath, true);
+                        ConsoleUI.StopSpinner();
+                        ConsoleUI.ShowSuccess(L.LocalFilesDeleted);
+                    }
+                    catch
+                    {
+                        ConsoleUI.StopSpinner();
+                        ConsoleUI.ShowError(L.LocalFilesDeletionFailed);
+                    }
+                }
+            }
         }
         else
         {
             ConsoleUI.ShowWarning(L.BackupCompletedWithErrors);
         }
+    }
+
+    /// <summary>
+    /// Seleziona un utente dal dispositivo di backup.
+    /// </summary>
+    private static async Task<MyUser?> SelectUserAsync()
+    {
+        var users = _adbManager.Users.Values.ToList();
+
+        // Ottieni l'utente attualmente attivo sul dispositivo
+        var currentUser = await _adbManager.GetCurrentUserAsync();
+
+        Console.WriteLine();
+        ConsoleUI.ShowInfo(L.SelectUser);
+
+        if (currentUser != null)
+        {
+            ConsoleUI.ShowInfo($"{L.CurrentActiveUser}: {currentUser.Name}");
+        }
+
+        Console.WriteLine();
+
+        for (int i = 0; i < users.Count; i++)
+        {
+            var user = users[i];
+            string activeMarker = (currentUser != null && user.Id == currentUser.Id) ? " [*]" : "";
+            ConsoleUI.ShowMenu(((i + 1).ToString(), $"{user.Name}{activeMarker}"));
+        }
+
+        Console.WriteLine();
+        ConsoleUI.ShowMenu(("0", L.Cancel));
+        Console.WriteLine();
+
+        string? choice = ConsoleUI.Prompt(L.SelectOption);
+
+        if (!int.TryParse(choice, out int index) || index < 0 || index > users.Count)
+        {
+            ConsoleUI.ShowError(L.InvalidSelection);
+            return null;
+        }
+
+        if (index == 0)
+        {
+            return null;
+        }
+
+        var selectedUser = users[index - 1];
+        ConsoleUI.ShowInfo($"{L.SelectedUser}: {selectedUser.Name}");
+
+        // Se l'utente selezionato non è quello attivo, effettua il cambio
+        if (currentUser == null || selectedUser.Id != currentUser.Id)
+        {
+            Console.WriteLine();
+            ConsoleUI.StartSpinner(L.SwitchingUser);
+            bool switchResult = await _adbManager.SetUserAsync(selectedUser);
+            ConsoleUI.StopSpinner();
+
+            if (switchResult)
+            {
+                ConsoleUI.ShowSuccess(L.UserSwitchedSuccessfully);
+            }
+            else
+            {
+                ConsoleUI.ShowError(L.UserSwitchFailed);
+                return null;
+            }
+        }
+
+        return selectedUser;
     }
 
     /// <summary>

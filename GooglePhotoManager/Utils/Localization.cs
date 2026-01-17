@@ -804,6 +804,80 @@ namespace GooglePhotoManager.Utils
             _ => "Vuoi procedere ugualmente? (S/N): "
         };
 
+        // === USER SELECTION ===
+        public static string ScanningUsers => CurrentLanguage switch
+        {
+            Language.English => "Scanning users on device...",
+            _ => "Scansione utenti sul dispositivo..."
+        };
+
+        public static string SelectUser => CurrentLanguage switch
+        {
+            Language.English => "Select a user:",
+            _ => "Seleziona un utente:"
+        };
+
+        public static string NoUsersFound => CurrentLanguage switch
+        {
+            Language.English => "No users found on device.",
+            _ => "Nessun utente trovato sul dispositivo."
+        };
+
+        public static string SwitchingUser => CurrentLanguage switch
+        {
+            Language.English => "Switching user profile...",
+            _ => "Cambio profilo utente in corso..."
+        };
+
+        public static string CurrentActiveUser => CurrentLanguage switch
+        {
+            Language.English => "Current active user",
+            _ => "Utente attualmente attivo"
+        };
+
+        public static string SelectedUser => CurrentLanguage switch
+        {
+            Language.English => "Selected user",
+            _ => "Utente selezionato"
+        };
+
+        public static string UserSwitchedSuccessfully => CurrentLanguage switch
+        {
+            Language.English => "User profile switched successfully.",
+            _ => "Profilo utente cambiato con successo."
+        };
+
+        public static string UserSwitchFailed => CurrentLanguage switch
+        {
+            Language.English => "Failed to switch user profile.",
+            _ => "Impossibile cambiare profilo utente."
+        };
+
+        // === LOCAL FILE DELETION ===
+        public static string DeleteLocalPhotosAfterTransfer => CurrentLanguage switch
+        {
+            Language.English => "Delete photos from local folder? (Y/N): ",
+            _ => "Eliminare le foto dalla cartella locale? (S/N): "
+        };
+
+        public static string DeletingLocalFiles => CurrentLanguage switch
+        {
+            Language.English => "Deleting local files...",
+            _ => "Eliminazione file locali in corso..."
+        };
+
+        public static string LocalFilesDeleted => CurrentLanguage switch
+        {
+            Language.English => "Local files deleted successfully.",
+            _ => "File locali eliminati con successo."
+        };
+
+        public static string LocalFilesDeletionFailed => CurrentLanguage switch
+        {
+            Language.English => "Error while deleting local files.",
+            _ => "Errore durante l'eliminazione dei file locali."
+        };
+
         #endregion
     }
 }
