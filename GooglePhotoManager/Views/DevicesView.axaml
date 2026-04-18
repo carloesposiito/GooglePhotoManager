@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:GooglePhotoManager.Controls"
+             x:Class="GooglePhotoManager.Views.DevicesView">
+
+    <Grid RowDefinitions="*">
+        <ScrollViewer x:Name="MainContent">
+            <StackPanel Margin="14,8" Spacing="8">
+
+                <!-- Stato + bottoni ADB su una riga -->
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock x:Name="LabelStatus" Text="ADB non inizializzato"
+                               VerticalAlignment="Center" Foreground="#9E9E9E" FontWeight="SemiBold"/>
+                    <Button x:Name="BtnInit" Content="Avvia ADB" Grid.Column="1"
+                            Background="#5C6BC0" Foreground="White"
+                            Margin="0,0,6,0" Click="OnInitClick"/>
+                    <Button x:Name="BtnScan" Content="Scansiona" Grid.Column="2"
+                            IsEnabled="False" Click="OnScanClick"/>
+                </Grid>
+
+                <Border Height="1" Background="#333333"/>
+
+                <!-- Wireless: IP + Porta + Codice compatti -->
+                <TextBlock Text="Wireless" FontSize="15" FontWeight="Bold" Foreground="#7986CB"/>
+
+                <Grid ColumnDefinitions="*,8,Auto" HorizontalAlignment="Stretch">
+                    <Button x:Name="BtnIpInput" Content="IP: tocca" Grid.Column="0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            IsEnabled="False" Click="OnIpInputClick"
+                            Background="#1E1E1E" Foreground="#9E9E9E" FontWeight="Normal"/>
+                    <Button x:Name="BtnPortInput" Content="Porta: 5555" Grid.Column="2"
+                            MinWidth="120" HorizontalContentAlignment="Center"
+                            IsEnabled="False" Click="OnPortInputClick"
+                            Background="#1E1E1E" Foreground="#B0BEC5" FontWeight="Normal"/>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,8,Auto,8,Auto" HorizontalAlignment="Stretch">
+                    <Button x:Name="BtnCodeInput" Content="Codice: tocca" Grid.Column="0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            IsEnabled="False" Click="OnCodeInputClick"
+                            Background="#1E1E1E" Foreground="#9E9E9E" FontWeight="Normal"/>
+                    <Button x:Name="BtnPair" Content="Associa" Grid.Column="2"
+                            IsEnabled="False" Click="OnPairClick" MinWidth="90"/>
+                    <Button x:Name="BtnConnect" Content="Connetti" Grid.Column="4"
+                            IsEnabled="False" Click="OnConnectClick" MinWidth="90"
+                            Background="#5C6BC0" Foreground="White"/>
+                </Grid>
+
+                <TextBlock x:Name="LabelWirelessResult" Text="" HorizontalAlignment="Center"
+                           TextWrapping="Wrap" Foreground="#9E9E9E" FontSize="14"/>
+
+                <Border Height="1" Background="#333333"/>
+
+                <!-- Dispositivi -->
+                <TextBlock Text="Dispositivi connessi" FontSize="15" FontWeight="Bold" Foreground="#7986CB"/>
+                <ListBox x:Name="DeviceList" MinHeight="50" MaxHeight="130"/>
+                <TextBlock x:Name="LabelCount" Text="" HorizontalAlignment="Center"
+                           Foreground="#757575" FontSize="13"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Overlay tastierino -->
+        <Border x:Name="KeypadOverlay" IsVisible="False" Background="#CC000000"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Background="#1E1E1E" CornerRadius="12" Padding="10"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MinWidth="260" MaxWidth="320" BorderBrush="#5C6BC0" BorderThickness="1">
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="KeypadTitle" Text="" FontSize="15" FontWeight="Bold"
+                               HorizontalAlignment="Center" Foreground="#7986CB"/>
+                    <controls:NumericKeypad x:Name="Keypad"/>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="GooglePhotoManager.Controls.TextKeypad">
+
+    <StackPanel Spacing="2">
+        <!-- Display -->
+        <Border Background="#2C2C2C" CornerRadius="6" Padding="8,5" MinHeight="34"
+                BorderBrush="#5C6BC0" BorderThickness="1">
+            <TextBlock x:Name="Display" Text="" FontSize="18" FontWeight="Bold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="#E0E0E0"/>
+        </Border>
+
+        <!-- Riga 1: Q W E R T Y U I O P -->
+        <WrapPanel HorizontalAlignment="Center">
+            <Button Content="Q" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="Q" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="W" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="W" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="E" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="E" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="R" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="R" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="T" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="T" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="Y" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="Y" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="U" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="U" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="I" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="I" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="O" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="O" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="P" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="P" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+        </WrapPanel>
+
+        <!-- Riga 2: A S D F G H J K L -->
+        <WrapPanel HorizontalAlignment="Center">
+            <Button Content="A" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="A" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="S" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="S" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="D" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="D" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="F" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="F" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="G" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="G" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="H" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="H" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="J" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="J" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="K" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="K" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="L" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="L" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+        </WrapPanel>
+
+        <!-- Riga 3: Z X C V B N M + Backspace -->
+        <WrapPanel HorizontalAlignment="Center">
+            <Button Content="Z" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="Z" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="X" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="X" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="C" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="C" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="V" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="V" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="B" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="B" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="N" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="N" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="M" MinWidth="34" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnKeyClick" Tag="M" Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="&#x232B;" MinWidth="50" MinHeight="36" FontSize="14" Margin="1" Padding="0" Click="OnBackspaceClick"
+                    Background="#3E2723" Foreground="#EF9A9A" CornerRadius="4"/>
+        </WrapPanel>
+
+        <!-- Riga 4: Spazio + numeri toggle -->
+        <Grid ColumnDefinitions="*,2*,*" HorizontalAlignment="Stretch" Margin="0,2,0,0">
+            <Button Content="123" Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    MinHeight="36" FontSize="13" Margin="1" Padding="0" Click="OnToggleNumbers"
+                    Background="#37474F" Foreground="#B0BEC5" CornerRadius="4"/>
+            <Button Content="SPAZIO" Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    MinHeight="36" FontSize="13" Margin="1" Padding="0" Click="OnSpaceClick"
+                    Background="#2C2C2C" Foreground="#E0E0E0" CornerRadius="4"/>
+            <Button Content="abc" Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    MinHeight="36" FontSize="13" Margin="1" Padding="0" Click="OnToggleCase"
+                    Background="#37474F" Foreground="#B0BEC5" CornerRadius="4"/>
+        </Grid>
+
+        <!-- Annulla / OK -->
+        <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch" Margin="0,2,0,0">
+            <Button x:Name="BtnCancel" Content="Annulla" Grid.Column="0"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    MinHeight="42" FontSize="15" Margin="1" Padding="0" Click="OnCancelClick"/>
+            <Button x:Name="BtnOk" Content="OK" Grid.Column="1"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    MinHeight="42" FontSize="15" FontWeight="Bold" Margin="1" Padding="0" Click="OnOkClick"
+                    Background="#2E7D32" Foreground="White"/>
+        </Grid>
+    </StackPanel>
+</UserControl>

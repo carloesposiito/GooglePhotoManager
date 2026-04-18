@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=GooglePhotoManager
+Exec=bash -c "chmod +x /home/carloesposito/Documents/App/publish-pi/GooglePhotoManager && /home/carloesposito/Documents/App/publish-pi/GooglePhotoManager"
+Path=/home/carloesposito/Documents/App/publish-pi
+Icon=application-x-executable
+Terminal=false
+Categories=Utility;

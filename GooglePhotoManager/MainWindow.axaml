@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:GooglePhotoManager.Views"
+        x:Class="GooglePhotoManager.MainWindow"
+        Title="ADB Device Manager"
+        Width="800" Height="480"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="*,Auto">
+        <!-- Contenuto tab -->
+        <TabControl x:Name="MainTabs" Grid.Row="0" TabStripPlacement="Bottom">
+            <TabItem Header="Backup">
+                <views:WizardView x:Name="WizardTab"/>
+            </TabItem>
+            <TabItem Header="Comandi">
+                <views:CommandsView x:Name="CommandsTab"/>
+            </TabItem>
+            <TabItem Header="Dispositivi">
+                <views:DevicesView x:Name="DevicesTab"/>
+            </TabItem>
+        </TabControl>
+
+        <!-- Separatore sopra i tab -->
+        <Border Grid.Row="1" Height="0" Background="Transparent"/>
+    </Grid>
+</Window>
