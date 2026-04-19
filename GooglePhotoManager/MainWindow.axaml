@@ -4,23 +4,46 @@
         x:Class="GooglePhotoManager.MainWindow"
         Title="ADB Device Manager"
         Width="800" Height="480"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="None">
 
-    <Grid RowDefinitions="*,Auto">
-        <!-- Contenuto tab -->
-        <TabControl x:Name="MainTabs" Grid.Row="0" TabStripPlacement="Bottom">
-            <TabItem Header="Backup">
-                <views:WizardView x:Name="WizardTab"/>
-            </TabItem>
-            <TabItem Header="Comandi">
-                <views:CommandsView x:Name="CommandsTab"/>
-            </TabItem>
-            <TabItem Header="Dispositivi">
-                <views:DevicesView x:Name="DevicesTab"/>
-            </TabItem>
-        </TabControl>
+    <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Separatore sopra i tab -->
-        <Border Grid.Row="1" Height="0" Background="Transparent"/>
+        <!-- Title bar -->
+        <Border Grid.Row="0" Background="#1A1A2E" BorderBrush="#2A2A4A" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto" Margin="0,5">
+                <TextBlock Text="Google Photo Manager" Grid.Column="0"
+                           VerticalAlignment="Center" Margin="12,5,0,5"
+                           FontSize="13" FontWeight="SemiBold" Foreground="#7986CB"
+                           IsHitTestVisible="False"/>
+                <Button x:Name="BtnClose" Content="✕" Grid.Column="1"
+                        Padding="10,2" Margin="0,5,6,5"
+                        Background="Transparent" Foreground="#9E9E9E"
+                        FontSize="14" CornerRadius="4"
+                        Click="OnCloseClick"/>
+            </Grid>
+        </Border>
+
+        <!-- Contenuto con padding 5px -->
+        <Grid Grid.Row="1" Margin="5">
+            <views:WizardView x:Name="WizardTab"/>
+            <views:CommandsView x:Name="CommandsTab" IsVisible="False"/>
+            <views:DevicesView x:Name="DevicesTab" IsVisible="False"/>
+        </Grid>
+
+        <!-- Bottom bar -->
+        <Border Grid.Row="2" Background="#1A1A2E" BorderBrush="#2A2A4A" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6" Margin="0,5">
+                <Button x:Name="TabBtn0" Content="Backup" Tag="0" Click="OnTabClick"
+                        MinWidth="120" Padding="6,2" Margin="0,5"
+                        Background="#5C6BC0" Foreground="White" FontWeight="Bold"/>
+                <Button x:Name="TabBtn1" Content="Comandi" Tag="1" Click="OnTabClick"
+                        MinWidth="120" Padding="6,2" Margin="0,5"
+                        Background="Transparent" Foreground="#9E9E9E" FontWeight="Bold"/>
+                <Button x:Name="TabBtn2" Content="Dispositivi" Tag="2" Click="OnTabClick"
+                        MinWidth="120" Padding="6,2" Margin="0,5"
+                        Background="Transparent" Foreground="#9E9E9E" FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

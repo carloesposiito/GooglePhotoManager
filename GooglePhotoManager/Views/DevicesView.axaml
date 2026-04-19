@@ -5,68 +5,73 @@
 
     <Grid RowDefinitions="*">
         <ScrollViewer x:Name="MainContent">
-            <StackPanel Margin="14,8" Spacing="8">
+            <StackPanel Margin="12,8" Spacing="8">
 
-                <!-- Stato + bottoni ADB su una riga -->
-                <Grid ColumnDefinitions="*,Auto,Auto">
-                    <TextBlock x:Name="LabelStatus" Text="ADB non inizializzato"
-                               VerticalAlignment="Center" Foreground="#9E9E9E" FontWeight="SemiBold"/>
-                    <Button x:Name="BtnInit" Content="Avvia ADB" Grid.Column="1"
-                            Background="#5C6BC0" Foreground="White"
-                            Margin="0,0,6,0" Click="OnInitClick"/>
-                    <Button x:Name="BtnScan" Content="Scansiona" Grid.Column="2"
-                            IsEnabled="False" Click="OnScanClick"/>
-                </Grid>
+                <!-- === Dispositivi connessi === -->
+                <Border Background="#1E1E1E" CornerRadius="6" Padding="20,15"
+                        BorderBrush="#333333" BorderThickness="1">
+                    <StackPanel Spacing="6">
+                        <TextBlock x:Name="LabelDevicesHeader" Text="Dispositivi connessi"
+                                   FontSize="14" FontWeight="Bold"
+                                   Foreground="#7986CB" Margin="0,0,0,4"/>
 
-                <Border Height="1" Background="#333333"/>
+                        <Button x:Name="BtnScan" Content="Scansiona"
+                                HorizontalAlignment="Stretch" Padding="6,3"
+                                Margin="0,0,0,5" Click="OnScanClick"/>
 
-                <!-- Wireless: IP + Porta + Codice compatti -->
-                <TextBlock Text="Wireless" FontSize="15" FontWeight="Bold" Foreground="#7986CB"/>
+                        <ListBox x:Name="DeviceList" MinHeight="34" MaxHeight="120"
+                                 IsHitTestVisible="False"/>
 
-                <Grid ColumnDefinitions="*,8,Auto" HorizontalAlignment="Stretch">
-                    <Button x:Name="BtnIpInput" Content="IP: tocca" Grid.Column="0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            IsEnabled="False" Click="OnIpInputClick"
-                            Background="#1E1E1E" Foreground="#9E9E9E" FontWeight="Normal"/>
-                    <Button x:Name="BtnPortInput" Content="Porta: 5555" Grid.Column="2"
-                            MinWidth="120" HorizontalContentAlignment="Center"
-                            IsEnabled="False" Click="OnPortInputClick"
-                            Background="#1E1E1E" Foreground="#B0BEC5" FontWeight="Normal"/>
-                </Grid>
+                        <TextBlock x:Name="LabelStatus" Text="Premi Scansiona per cercare dispositivi"
+                                   Foreground="#757575" FontSize="11" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
 
-                <Grid ColumnDefinitions="*,8,Auto,8,Auto" HorizontalAlignment="Stretch">
-                    <Button x:Name="BtnCodeInput" Content="Codice: tocca" Grid.Column="0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            IsEnabled="False" Click="OnCodeInputClick"
-                            Background="#1E1E1E" Foreground="#9E9E9E" FontWeight="Normal"/>
-                    <Button x:Name="BtnPair" Content="Associa" Grid.Column="2"
-                            IsEnabled="False" Click="OnPairClick" MinWidth="90"/>
-                    <Button x:Name="BtnConnect" Content="Connetti" Grid.Column="4"
-                            IsEnabled="False" Click="OnConnectClick" MinWidth="90"
-                            Background="#5C6BC0" Foreground="White"/>
-                </Grid>
+                <!-- === Connessione wireless === -->
+                <Border Background="#1E1E1E" CornerRadius="6" Padding="20,15"
+                        BorderBrush="#333333" BorderThickness="1">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Connessione wireless" FontSize="14" FontWeight="Bold"
+                                   Foreground="#7986CB" Margin="0,0,0,4"/>
 
-                <TextBlock x:Name="LabelWirelessResult" Text="" HorizontalAlignment="Center"
-                           TextWrapping="Wrap" Foreground="#9E9E9E" FontSize="14"/>
+                        <Grid ColumnDefinitions="*,6,*,6,*" HorizontalAlignment="Stretch"
+                              Margin="0,0,0,5">
+                            <Button x:Name="BtnIpInput" Content="IP: tocca" Grid.Column="0"
+                                    HorizontalAlignment="Stretch" Padding="6,3"
+                                    Click="OnIpInputClick"
+                                    Background="#2C2C2C" Foreground="#757575" FontWeight="Normal"/>
+                            <Button x:Name="BtnPortInput" Content="Porta: 5555" Grid.Column="2"
+                                    HorizontalAlignment="Stretch" Padding="6,3"
+                                    Click="OnPortInputClick"
+                                    Background="#2C2C2C" Foreground="#B0BEC5" FontWeight="Normal"/>
+                            <Button x:Name="BtnCodeInput" Content="Codice: tocca" Grid.Column="4"
+                                    HorizontalAlignment="Stretch" Padding="6,3"
+                                    Click="OnCodeInputClick"
+                                    Background="#2C2C2C" Foreground="#757575" FontWeight="Normal"/>
+                        </Grid>
 
-                <Border Height="1" Background="#333333"/>
+                        <Button x:Name="BtnConnect" Content="Connetti" Padding="6,3"
+                                HorizontalAlignment="Stretch"
+                                Click="OnConnectClick"
+                                Background="#5C6BC0" Foreground="White"/>
 
-                <!-- Dispositivi -->
-                <TextBlock Text="Dispositivi connessi" FontSize="15" FontWeight="Bold" Foreground="#7986CB"/>
-                <ListBox x:Name="DeviceList" MinHeight="50" MaxHeight="130"/>
-                <TextBlock x:Name="LabelCount" Text="" HorizontalAlignment="Center"
-                           Foreground="#757575" FontSize="13"/>
+                        <TextBlock x:Name="LabelWirelessResult" Text="" HorizontalAlignment="Center"
+                                   TextWrapping="Wrap" Foreground="#757575" FontSize="11"
+                                   Margin="0,0,0,2"/>
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
         </ScrollViewer>
 
         <!-- Overlay tastierino -->
         <Border x:Name="KeypadOverlay" IsVisible="False" Background="#CC000000"
                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <Border Background="#1E1E1E" CornerRadius="12" Padding="10"
+            <Border Background="#1E1E1E" CornerRadius="10" Padding="8"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                    MinWidth="260" MaxWidth="320" BorderBrush="#5C6BC0" BorderThickness="1">
-                <StackPanel Spacing="4">
-                    <TextBlock x:Name="KeypadTitle" Text="" FontSize="15" FontWeight="Bold"
+                    MinWidth="240" MaxWidth="300" BorderBrush="#5C6BC0" BorderThickness="1">
+                <StackPanel Spacing="3">
+                    <TextBlock x:Name="KeypadTitle" Text="" FontSize="13" FontWeight="Bold"
                                HorizontalAlignment="Center" Foreground="#7986CB"/>
                     <controls:NumericKeypad x:Name="Keypad"/>
                 </StackPanel>

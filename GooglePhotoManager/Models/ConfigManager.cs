@@ -6,6 +6,8 @@ namespace GooglePhotoManager.Models;
 
 public class ConfigManager
 {
+    #region Campi privati
+
     private const string CONFIG_FILENAME = "config.xml";
     private const string DEFAULT_BACKUP_DEVICE_MODEL = "Pixel_5";
     private const string DEFAULT_BACKUP_DEVICE_PRODUCT = "redfin";
@@ -14,19 +16,30 @@ public class ConfigManager
     private string _backupDeviceModel = DEFAULT_BACKUP_DEVICE_MODEL;
     private string _backupDeviceProduct = DEFAULT_BACKUP_DEVICE_PRODUCT;
 
+    #endregion
+
+    #region Proprietà
+
+    // Modello del dispositivo di backup
     public string BackupDeviceModel
     {
         get => _backupDeviceModel;
         set => _backupDeviceModel = value;
     }
 
+    // Prodotto del dispositivo di backup
     public string BackupDeviceProduct
     {
         get => _backupDeviceProduct;
         set => _backupDeviceProduct = value;
     }
 
+    // Nome descrittivo del dispositivo di backup
     public string BackupDeviceName => $"{BackupDeviceModel} ({BackupDeviceProduct})";
+
+    #endregion
+
+    #region Metodi
 
     public ConfigManager()
     {
@@ -34,6 +47,7 @@ public class ConfigManager
         Load();
     }
 
+    // Carica la configurazione dal file XML
     public void Load()
     {
         try
@@ -61,6 +75,7 @@ public class ConfigManager
             }
             else
             {
+                // Se il file non esiste, lo crea con i valori di default
                 Save();
             }
         }
@@ -71,6 +86,7 @@ public class ConfigManager
         }
     }
 
+    // Salva la configurazione corrente su file XML
     public void Save()
     {
         try
@@ -93,6 +109,7 @@ public class ConfigManager
         }
     }
 
+    // Imposta il dispositivo di backup e salva
     public void SetBackupDevice(string model, string product)
     {
         _backupDeviceModel = model;
@@ -100,9 +117,12 @@ public class ConfigManager
         Save();
     }
 
+    // Verifica se un dispositivo corrisponde a quello di backup configurato
     public bool IsBackupDevice(string model, string product)
     {
         return model.Equals(_backupDeviceModel, StringComparison.OrdinalIgnoreCase) &&
                product.Equals(_backupDeviceProduct, StringComparison.OrdinalIgnoreCase);
     }
+
+    #endregion
 }

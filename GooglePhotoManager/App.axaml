@@ -6,7 +6,7 @@
     <Application.Styles>
         <FluentTheme />
 
-        <!-- ===== TEMA SCURO MATERIAL - Touch 5" ===== -->
+        <!-- ===== TEMA SCURO MATERIAL - Ottimizzato 800x480 ===== -->
 
         <Style Selector="Window">
             <Setter Property="Background" Value="#121212"/>
@@ -14,13 +14,15 @@
 
         <!-- Bottoni -->
         <Style Selector="Button">
-            <Setter Property="MinHeight" Value="46"/>
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Background" Value="#2C2C2C"/>
             <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
         <Style Selector="Button:disabled">
             <Setter Property="Opacity" Value="0.35"/>
@@ -28,17 +30,18 @@
 
         <!-- ListBox -->
         <Style Selector="ListBox">
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Background" Value="#1E1E1E"/>
             <Setter Property="BorderBrush" Value="#333333"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
         <Style Selector="ListBoxItem">
-            <Setter Property="MinHeight" Value="48"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Margin" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
         <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
             <Setter Property="Background" Value="#37474F"/>
@@ -46,37 +49,33 @@
 
         <!-- TextBlock -->
         <Style Selector="TextBlock">
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="#E0E0E0"/>
         </Style>
 
         <!-- CheckBox -->
         <Style Selector="CheckBox">
-            <Setter Property="MinHeight" Value="44"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- ComboBox -->
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="BorderBrush" Value="#333333"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="13"/>
         </Style>
 
         <!-- ProgressBar -->
         <Style Selector="ProgressBar">
-            <Setter Property="Height" Value="8"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="CornerRadius" Value="3"/>
             <Setter Property="Foreground" Value="#5C6BC0"/>
             <Setter Property="Background" Value="#333333"/>
         </Style>
 
-        <!-- Tab -->
-        <Style Selector="TabControl">
-            <Setter Property="Background" Value="#121212"/>
-        </Style>
-        <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="MinHeight" Value="48"/>
-            <Setter Property="Padding" Value="16,8"/>
-            <Setter Property="Foreground" Value="#9E9E9E"/>
-        </Style>
-        <Style Selector="TabItem:selected">
-            <Setter Property="Foreground" Value="#7986CB"/>
-        </Style>
+        <!-- Nessuno stile Tab: la barra tab e' gestita manualmente in MainWindow -->
     </Application.Styles>
 </Application>

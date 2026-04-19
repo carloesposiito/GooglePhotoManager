@@ -7,176 +7,163 @@
 
         <!-- Menu comandi -->
         <ScrollViewer x:Name="MenuPanel">
-            <StackPanel Margin="14,8" Spacing="8">
-                <TextBlock Text="Comandi" FontSize="22" FontWeight="Bold"
-                           HorizontalAlignment="Center" Foreground="#7986CB"/>
+            <StackPanel Margin="12,8" Spacing="8">
 
-                <!-- Selezione dispositivo -->
-                <Border Background="#1E1E1E" CornerRadius="10" Padding="12,8"
+                <!-- === Dispositivo === -->
+                <Border Background="#1E1E1E" CornerRadius="6" Padding="20,15"
                         BorderBrush="#333333" BorderThickness="1">
                     <StackPanel Spacing="6">
-                        <TextBlock Text="Dispositivo:" FontWeight="Bold" FontSize="15"
-                                   Foreground="#B0BEC5"/>
-                        <ListBox x:Name="DeviceSelectList" MaxHeight="100"
-                                 SelectionChanged="OnDeviceSelectionChanged"/>
-                        <TextBlock x:Name="LabelSelectedDevice" Text="Nessun dispositivo selezionato"
-                                   Foreground="#757575" FontSize="13" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Dispositivo" FontSize="14" FontWeight="Bold"
+                                   Foreground="#7986CB" Margin="0,0,0,4"/>
+
+                        <ComboBox x:Name="DeviceSelectCombo" HorizontalAlignment="Stretch"
+                                  PlaceholderText="Seleziona dispositivo..."
+                                  SelectionChanged="OnDeviceSelectionChanged"/>
                     </StackPanel>
                 </Border>
 
-                <!-- Comandi file -->
-                <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch">
-                    <Button x:Name="BtnTransferDocs" Content="Trasferisci in Documents"
-                            Grid.Column="0" Margin="0,0,4,0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            MinHeight="52" FontSize="14" IsEnabled="False"
-                            Background="#5C6BC0" Foreground="White"
-                            Click="OnTransferDocsClick"/>
-                    <Button x:Name="BtnBackupFolder" Content="Backup cartella"
-                            Grid.Column="1" Margin="4,0,0,0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            MinHeight="52" FontSize="14" IsEnabled="False"
-                            Background="#5C6BC0" Foreground="White"
-                            Click="OnBackupFolderClick"/>
-                </Grid>
+                <!-- === Comandi === -->
+                <Border Background="#1E1E1E" CornerRadius="6" Padding="20,15"
+                        BorderBrush="#333333" BorderThickness="1">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Comandi" FontSize="14" FontWeight="Bold"
+                                   Foreground="#7986CB" Margin="0,0,0,4"/>
 
-                <!-- Comandi utente -->
-                <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch">
-                    <Button x:Name="BtnSwitchUser" Content="Cambia utente"
-                            Grid.Column="0" Margin="0,0,4,0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            MinHeight="52" FontSize="14" IsEnabled="False"
-                            Background="#37474F" Foreground="#E0E0E0"
-                            Click="OnSwitchUserClick"/>
-                    <Button x:Name="BtnCreateUser" Content="Crea utente"
-                            Grid.Column="1" Margin="4,0,0,0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            MinHeight="52" FontSize="14" IsEnabled="False"
-                            Background="#37474F" Foreground="#E0E0E0"
-                            Click="OnCreateUserClick"/>
-                </Grid>
+                        <Button x:Name="BtnTransferDocs" Content="Trasferisci in Documents"
+                                HorizontalAlignment="Stretch" Padding="6,3" IsEnabled="False"
+                                Background="#5C6BC0" Foreground="White"
+                                Click="OnTransferDocsClick"/>
+                        <Button x:Name="BtnBackupFolder" Content="Backup cartella"
+                                HorizontalAlignment="Stretch" Padding="6,3" IsEnabled="False"
+                                Background="#5C6BC0" Foreground="White"
+                                Click="OnBackupFolderClick"/>
+                        <Button x:Name="BtnSwitchUser" Content="Cambia utente"
+                                HorizontalAlignment="Stretch" Padding="6,3" IsEnabled="False"
+                                Background="#5C6BC0" Foreground="White"
+                                Click="OnSwitchUserClick"/>
+                        <Button x:Name="BtnCreateUser" Content="Crea utente"
+                                HorizontalAlignment="Stretch" Padding="6,3" IsEnabled="False"
+                                Background="#5C6BC0" Foreground="White"
+                                Click="OnCreateUserClick"/>
+                        <Button x:Name="BtnReboot" Content="Riavvia"
+                                HorizontalAlignment="Stretch" Padding="6,3" IsEnabled="False"
+                                Background="#5C6BC0" Foreground="White"
+                                Click="OnRebootClick"/>
 
-                <!-- Comandi dispositivo -->
-                <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch">
-                    <Button x:Name="BtnDeviceInfo" Content="Info dispositivo"
-                            Grid.Column="0" Margin="0,0,4,0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            MinHeight="52" FontSize="14" IsEnabled="False"
-                            Background="#37474F" Foreground="#E0E0E0"
-                            Click="OnDeviceInfoClick"/>
-                    <Button x:Name="BtnReboot" Content="Riavvia"
-                            Grid.Column="1" Margin="4,0,0,0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            MinHeight="52" FontSize="14" IsEnabled="False"
-                            Background="#C62828" Foreground="White"
-                            Click="OnRebootClick"/>
-                </Grid>
+                        <TextBlock x:Name="LabelMenuError" Text="" HorizontalAlignment="Center"
+                                   Foreground="#EF5350" FontSize="11"/>
+                    </StackPanel>
+                </Border>
 
-                <TextBlock x:Name="LabelMenuError" Text="" HorizontalAlignment="Center"
-                           Foreground="#EF5350" FontSize="14"/>
             </StackPanel>
         </ScrollViewer>
 
         <!-- Pannello operazione -->
         <ScrollViewer x:Name="OperationPanel" IsVisible="False">
-            <StackPanel Margin="14,8" Spacing="10">
-                <Border Background="#1A237E" CornerRadius="8" Padding="10,7">
-                    <TextBlock x:Name="LabelOpTitle" Text="" FontSize="16" FontWeight="Bold"
-                               HorizontalAlignment="Center" Foreground="#C5CAE9"/>
-                </Border>
+            <StackPanel Margin="12,8" Spacing="8">
 
-                <!-- Selezione cartella -->
-                <StackPanel x:Name="FolderSelectPanel" IsVisible="False" Spacing="8">
-                    <TextBlock Text="Seleziona cartella:" FontWeight="Bold" FontSize="15"
-                               Foreground="#B0BEC5"/>
-                    <ListBox x:Name="FolderSelectList" MaxHeight="200"
-                             SelectionChanged="OnFolderSelected"/>
-                </StackPanel>
-
-                <!-- Lista file -->
-                <StackPanel x:Name="FileListPanel" IsVisible="False" Spacing="8">
-                    <TextBlock x:Name="LabelFileListTitle" Text="" FontWeight="Bold" FontSize="15"
-                               Foreground="#B0BEC5"/>
-                    <ListBox x:Name="FileList" MaxHeight="140"/>
-                    <Button x:Name="BtnStartTransfer" Content="Avvia trasferimento"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            MinHeight="52" FontSize="16" FontWeight="Bold"
-                            Background="#2E7D32" Foreground="White"
-                            Click="OnStartTransferClick"/>
-                </StackPanel>
-
-                <!-- Selezione utente (per switch user) -->
-                <StackPanel x:Name="UserSelectPanel" IsVisible="False" Spacing="8">
-                    <TextBlock Text="Seleziona utente:" FontWeight="Bold" FontSize="15"
-                               Foreground="#B0BEC5"/>
-                    <ListBox x:Name="UserSelectList" MaxHeight="180"
-                             SelectionChanged="OnUserSelected"/>
-                    <TextBlock x:Name="LabelUserStatus" Text="" Foreground="#9E9E9E"
-                               HorizontalAlignment="Center" FontSize="14"/>
-                </StackPanel>
-
-                <!-- Info dispositivo -->
-                <StackPanel x:Name="DeviceInfoPanel" IsVisible="False" Spacing="6">
-                    <ItemsControl x:Name="InfoList"/>
-                </StackPanel>
-
-                <!-- Conferma riavvio -->
-                <StackPanel x:Name="RebootConfirmPanel" IsVisible="False" Spacing="10">
-                    <Border Background="#37474F" CornerRadius="8" Padding="14,10">
-                        <TextBlock Text="Sei sicuro di voler riavviare il dispositivo?"
-                                   HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold"
-                                   Foreground="#FFB74D" TextWrapping="Wrap" TextAlignment="Center"/>
-                    </Border>
-                    <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch">
-                        <Button Content="SI, RIAVVIA" Grid.Column="0" Margin="0,0,4,0"
-                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                MinHeight="52" FontWeight="Bold"
-                                Background="#C62828" Foreground="White"
-                                Click="OnRebootConfirmYes"/>
-                        <Button Content="ANNULLA" Grid.Column="1" Margin="4,0,0,0"
-                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                MinHeight="52"
-                                Click="OnBackClick"/>
-                    </Grid>
-                </StackPanel>
-
-                <!-- Progresso -->
-                <StackPanel x:Name="ProgressPanel" IsVisible="False" Spacing="8">
-                    <TextBlock x:Name="LabelProgressStatus" Text=""
-                               HorizontalAlignment="Center" FontWeight="Bold" FontSize="16"
-                               Foreground="#7986CB"/>
-                    <ProgressBar x:Name="ProgressBarOp" Minimum="0" Maximum="100" Value="0"/>
-                    <TextBlock x:Name="LabelProgressFile" Text="" HorizontalAlignment="Center"
-                               Foreground="#9E9E9E" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="LabelProgressCount" Text="" HorizontalAlignment="Center"
-                               FontSize="15" FontWeight="SemiBold" Foreground="#B0BEC5"/>
-                </StackPanel>
-
-                <!-- Risultato -->
-                <Border x:Name="ResultPanel" IsVisible="False" CornerRadius="10"
-                        Padding="14" Background="#1E1E1E" BorderBrush="#333333" BorderThickness="1">
+                <Border Background="#1E1E1E" CornerRadius="6" Padding="20,15"
+                        BorderBrush="#333333" BorderThickness="1">
                     <StackPanel Spacing="6">
-                        <TextBlock x:Name="LabelResultTitle" Text="" FontSize="17"
-                                   FontWeight="Bold" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="LabelResultDetails" Text="" TextWrapping="Wrap"
-                                   FontSize="14" Foreground="#B0BEC5"/>
+                        <TextBlock x:Name="LabelOpTitle" Text="" FontSize="14" FontWeight="Bold"
+                                   Foreground="#7986CB" Margin="0,0,0,4"/>
+
+                        <!-- Selezione cartella -->
+                        <StackPanel x:Name="FolderSelectPanel" IsVisible="False" Spacing="6">
+                            <TextBlock Text="Seleziona cartella:" FontSize="13"
+                                       Foreground="#B0BEC5"/>
+                            <ListBox x:Name="FolderSelectList" MaxHeight="160"
+                                     SelectionChanged="OnFolderSelected"/>
+                        </StackPanel>
+
+                        <!-- Lista file -->
+                        <StackPanel x:Name="FileListPanel" IsVisible="False" Spacing="6">
+                            <TextBlock x:Name="LabelFileListTitle" Text="" FontSize="13"
+                                       Foreground="#B0BEC5"/>
+                            <ListBox x:Name="FileList" MaxHeight="120"/>
+                            <Button x:Name="BtnStartTransfer" Content="Avvia trasferimento"
+                                    HorizontalAlignment="Stretch" Padding="6,3"
+                                    Background="#2E7D32" Foreground="White"
+                                    Click="OnStartTransferClick"/>
+                        </StackPanel>
+
+                        <!-- Selezione utente -->
+                        <StackPanel x:Name="UserSelectPanel" IsVisible="False" Spacing="6">
+                            <TextBlock Text="Seleziona utente:" FontSize="13"
+                                       Foreground="#B0BEC5"/>
+                            <ListBox x:Name="UserSelectList" MaxHeight="140"
+                                     SelectionChanged="OnUserSelected"/>
+                            <TextBlock x:Name="LabelUserStatus" Text="" Foreground="#757575"
+                                       HorizontalAlignment="Center" FontSize="11"/>
+                        </StackPanel>
+
+                        <!-- Conferma riavvio -->
+                        <StackPanel x:Name="RebootConfirmPanel" IsVisible="False" Spacing="6">
+                            <TextBlock Text="Sei sicuro di voler riavviare il dispositivo?"
+                                       HorizontalAlignment="Center" FontSize="14"
+                                       Foreground="#FFB74D" TextWrapping="Wrap" TextAlignment="Center"/>
+                            <Grid ColumnDefinitions="*,6,*" HorizontalAlignment="Stretch">
+                                <Button Content="SI, RIAVVIA" Grid.Column="0"
+                                        HorizontalAlignment="Stretch" Padding="6,3"
+                                        Background="#C62828" Foreground="White"
+                                        Click="OnRebootConfirmYes"/>
+                                <Button Content="ANNULLA" Grid.Column="2"
+                                        HorizontalAlignment="Stretch" Padding="6,3"
+                                        Click="OnBackClick"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Progresso -->
+                        <StackPanel x:Name="ProgressPanel" IsVisible="False" Spacing="6">
+                            <TextBlock x:Name="LabelProgressStatus" Text=""
+                                       HorizontalAlignment="Center" FontWeight="Bold" FontSize="14"
+                                       Foreground="#7986CB"/>
+                            <ProgressBar x:Name="ProgressBarOp" Minimum="0" Maximum="100" Value="0"/>
+                            <TextBlock x:Name="LabelProgressFile" Text="" HorizontalAlignment="Center"
+                                       Foreground="#757575" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="LabelProgressCount" Text="" HorizontalAlignment="Center"
+                                       FontSize="13" Foreground="#B0BEC5"/>
+                        </StackPanel>
+
+                        <!-- Risultato -->
+                        <StackPanel x:Name="ResultPanel" IsVisible="False" Spacing="6">
+                            <TextBlock x:Name="LabelResultTitle" Text="" FontSize="14"
+                                       FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="LabelResultDetails" Text="" TextWrapping="Wrap"
+                                       FontSize="12" Foreground="#B0BEC5"/>
+                        </StackPanel>
+
+                        <!-- Bottoni finali (2 colonne se "Apri cartella" visibile, altrimenti 1) -->
+                        <Grid x:Name="EndButtonsPanel" IsVisible="False"
+                              HorizontalAlignment="Stretch">
+                            <Button x:Name="BtnBack" Content="Torna ai comandi"
+                                    HorizontalAlignment="Stretch" Padding="6,3"
+                                    Click="OnBackClick"/>
+                        </Grid>
+                        <Grid x:Name="EndButtonsWithFolderPanel" IsVisible="False"
+                              ColumnDefinitions="*,6,*" HorizontalAlignment="Stretch">
+                            <Button Content="Torna ai comandi" Grid.Column="0"
+                                    HorizontalAlignment="Stretch" Padding="6,3"
+                                    Click="OnBackClick"/>
+                            <Button x:Name="BtnOpenFolder" Content="Apri cartella" Grid.Column="2"
+                                    HorizontalAlignment="Stretch" Padding="6,3"
+                                    Background="#5C6BC0" Foreground="White"
+                                    Click="OnOpenFolderClick"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
 
-                <Button x:Name="BtnBack" Content="Torna ai comandi"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Click="OnBackClick" Margin="0,4,0,0"/>
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Overlay tastiera testo (per crea utente) -->
+        <!-- Overlay tastiera testo -->
         <Border x:Name="TextKeypadOverlay" IsVisible="False" Background="#CC000000"
                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <Border Background="#1E1E1E" CornerRadius="12" Padding="10"
+            <Border Background="#1E1E1E" CornerRadius="10" Padding="8"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                    MinWidth="380" MaxWidth="420" BorderBrush="#5C6BC0" BorderThickness="1">
-                <StackPanel Spacing="4">
-                    <TextBlock x:Name="TextKeypadTitle" Text="" FontSize="15" FontWeight="Bold"
+                    MinWidth="360" MaxWidth="400" BorderBrush="#5C6BC0" BorderThickness="1">
+                <StackPanel Spacing="3">
+                    <TextBlock x:Name="TextKeypadTitle" Text="" FontSize="13" FontWeight="Bold"
                                HorizontalAlignment="Center" Foreground="#7986CB"/>
                     <controls:TextKeypad x:Name="TextKbd"/>
                 </StackPanel>
